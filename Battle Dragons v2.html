@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Dragons: Teacher Review Game</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #14110f;
+            color: #e5e0d8;
+            background-image: radial-gradient(circle at center, #292019 0%, #0d0a08 100%);
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, .title-font {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Dungeon Map Styles */
+        .board-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 5; /* Widescreen 16:5 ratio */
+            padding: 2%;
+            margin: 0 auto;
+            z-index: 10;
+        }
+
+        .board-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #dcb888;
+            background-image: 
+                url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.15"/></svg>'),
+                radial-gradient(circle at 50% 50%, transparent 40%, rgba(139, 90, 43, 0.5) 85%, rgba(74, 40, 16, 0.8) 100%),
+                radial-gradient(circle at 10% 90%, rgba(120, 70, 30, 0.4) 0%, transparent 40%),
+                radial-gradient(circle at 90% 10%, rgba(120, 70, 30, 0.4) 0%, transparent 40%);
+            border-radius: 6px;
+            box-shadow: 
+                inset 0 0 40px 25px rgba(35, 15, 5, 0.85), 
+                inset 0 0 80px 50px rgba(70, 30, 10, 0.6),
+                0 15px 30px rgba(0,0,0,0.8);
+            filter: url(#frayed-edges);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr); /* Widescreen 16 cols */
+            grid-template-rows: repeat(5, 1fr);    /* 5 rows */
+            gap: 0;
+            position: relative;
+            z-index: 10;
+            height: 100%;
+        }
+
+        .map-svg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .tile {
+            position: relative;
+            background-color: rgba(235, 219, 188, 0.85);
+            border: 2px solid #5c4033;
+            margin: 5px;
+            border-radius: 2px;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            justify-content: center;
+            padding: 5px;
+            box-shadow: inset 0 0 10px rgba(92,64,51,0.2), 3px 3px 6px rgba(0,0,0,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 5;
+        }
+
+        .tile-number {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.75rem;
+            color: #5c4033;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Start and End Tiles */
+        .tile.start-zone { background-color: #b5c9a7; border-color: #3b5a2b; border-style: solid; }
+        .tile.end-zone { background-color: #c9a7a7; border-color: #5a2b2b; border-style: solid; }
+        
+        .tile.glow-path {
+            animation: pulse-glow 1.5s infinite;
+            cursor: pointer;
+            border: 3px solid #f1c40f;
+            z-index: 20;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px #f1c40f; transform: scale(1); }
+            50% { box-shadow: 0 0 20px #f1c40f, 0 0 30px #e67e22; transform: scale(1.1); }
+            100% { box-shadow: 0 0 5px #f1c40f; transform: scale(1); }
+        }
+
+        /* Dragon Avatars (Decreased by 25%) */
+        .dragon-token {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            margin: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            border: 4px solid white;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Dice Animation */
+        .dice-container {
+            perspective: 1000px;
+            display: inline-block;
+        }
+        .dice {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #f1c40f, #e67e22);
+            color: #000;
+            font-size: 2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.5);
+            border: 2px solid #d35400;
+            transition: transform 0.5s;
+        }
+        .rolling {
+            animation: spinDice 0.5s infinite linear;
+        }
+
+        @keyframes spinDice {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* Utilities */
+        .glass-panel {
+            background: rgba(30, 24, 20, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid #4a3b2f;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+        
+        .action-btn {
+            transition: all 0.2s;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        
+        #log-container {
+            scrollbar-width: thin;
+            scrollbar-color: #555 #222;
+        }
+        #log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        #log-container::-webkit-scrollbar-track {
+            background: #222;
+        }
+        #log-container::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="p-2 md:p-4 flex flex-col items-center min-h-screen w-full overflow-x-hidden">
+
+    <!-- SVG Filters for Burnt Parchment -->
+    <svg style="visibility: hidden; position: absolute;" width="0" height="0" xmlns="http://www.w3.org/2000/svg" version="1.1">
+        <defs>
+            <filter id="frayed-edges">
+                <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" result="noise" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- VIEW: SETUP -->
+    <div id="setup-view" class="w-full max-w-4xl glass-panel rounded-xl p-6 md:p-8 shadow-2xl relative z-10 border border-amber-900/50 flex flex-col h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)]">
+        <div class="flex items-center justify-center gap-4 mb-2 flex-shrink-0">
+            <!-- Left Dragon -->
+            <svg class="w-24 h-24 sm:w-32 sm:h-32 text-orange-500 drop-shadow-[0_4px_6px_rgba(234,88,12,0.4)] transform -scale-x-100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <path d="M 35,95 C 45,85 45,75 40,65" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M 38,88 Q 55,88 68,78" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M 42,75 Q 55,75 62,65" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M 15,55 Q 10,50 15,45 Q 25,40 32,32 L 48,15 L 50,25 L 68,18 L 62,32 L 80,35 L 72,45 L 88,55 L 78,65 L 90,80 L 75,95 L 35,95 C 25,85 20,70 30,62 C 25,60 18,62 15,55 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M 35,42 Q 40,38 45,42 Q 40,44 35,42 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+                <path d="M 32,38 Q 40,35 48,40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M 15,55 Q 30,55 45,50" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="20" cy="48" r="1.5" fill="currentColor"/>
+            </svg>
+            
+            <h1 class="text-4xl sm:text-5xl text-center text-orange-500 title-font tracking-wider font-black drop-shadow-md">Battle Dragons</h1>
+            
+            <!-- Right Dragon -->
+            <svg class="w-24 h-24 sm:w-32 sm:h-32 text-orange-500 drop-shadow-[0_4px_6px_rgba(234,88,12,0.4)]" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <path d="M 35,95 C 45,85 45,75 40,65" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M 38,88 Q 55,88 68,78" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M 42,75 Q 55,75 62,65" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M 15,55 Q 10,50 15,45 Q 25,40 32,32 L 48,15 L 50,25 L 68,18 L 62,32 L 80,35 L 72,45 L 88,55 L 78,65 L 90,80 L 75,95 L 35,95 C 25,85 20,70 30,62 C 25,60 18,62 15,55 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M 35,42 Q 40,38 45,42 Q 40,44 35,42 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+                <path d="M 32,38 Q 40,35 48,40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M 23,62 Q 40,62 55,57" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="32" cy="50" r="1.5" fill="currentColor"/>
+            </svg>
+        </div>
+        <p class="text-center text-amber-600/80 mb-6 font-serif italic border-b border-amber-900/50 pb-4 flex-shrink-0 text-lg">A review game of strategy, luck, and destruction.</p>
+        
+        <div class="flex flex-col flex-1 min-h-0">
+            <div class="flex-shrink-0">
+                <label for="team-count" class="block text-sm font-medium text-gray-300 mb-2">Number of Teams</label>
+                <select id="team-count" class="w-full p-3 rounded bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 text-lg">
+                    <option value="2">2 Teams</option>
+                    <option value="3" selected>3 Teams</option>
+                    <option value="4">4 Teams</option>
+                    <option value="5">5 Teams</option>
+                    <option value="6">6 Teams</option>
+                </select>
+            </div>
+            
+            <div id="team-names-container" class="flex flex-col gap-4 flex-1 overflow-y-auto pr-2 min-h-0 my-6">
+                <!-- Inputs generated by JS -->
+            </div>
+            
+            <button onclick="startGame()" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 px-6 rounded shadow-lg action-btn text-2xl title-font mt-auto flex-shrink-0">
+                Begin the Battle
+            </button>
+        </div>
+    </div>
+
+    <!-- VIEW: GAME -->
+    <div id="game-view" class="w-full hidden flex-col items-center gap-4 mt-2 flex-grow pb-2 max-w-[1800px] mx-auto px-2">
+
+        <!-- End Game Early Button -->
+        <button id="btn-end-early" onclick="endGameEarly()" class="fixed top-3 right-3 md:top-5 md:right-5 z-[60] bg-[#4a1c1c] hover:bg-[#7a1a1a] text-[#ffcccc] border border-[#ff4444] rounded px-4 py-1.5 text-xs md:text-sm font-bold transition-all shadow-[0_4px_10px_rgba(0,0,0,0.8)] tracking-wider title-font" title="End Game Early & Crown Leader">
+            END
+        </button>
+
+        <!-- Top Controls & Stats -->
+        <div class="w-full flex flex-col lg:flex-row gap-4 flex-shrink-0 z-20">
+            
+            <!-- Teams Dashboard (Doubled size icons) -->
+            <div class="glass-panel rounded-xl p-4 flex flex-col gap-2 flex-shrink-0 w-full lg:w-1/3 max-h-[350px] overflow-y-auto" id="teams-dashboard">
+                <h2 class="text-xl title-font text-gray-300 border-b border-gray-600 pb-2 mb-2">Dragon Flights</h2>
+                <!-- Team cards generated by JS -->
+            </div>
+
+            <!-- Teacher Controls -->
+            <div class="glass-panel rounded-xl p-5 flex flex-col items-center justify-start text-center relative border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)] flex-shrink-0 w-full lg:w-1/3 max-h-[350px] overflow-y-auto">
+                <h2 class="text-2xl title-font text-orange-400 mb-1 border-b border-gray-700 w-full pb-2">Teacher Controls</h2>
+                
+                <div id="control-active-team" class="text-xl font-bold mt-2 mb-2 title-font">
+                    Team Name's Turn
+                </div>
+
+                <!-- Phase 1: Question -->
+                <div id="phase-question" class="w-full mt-2 flex flex-col gap-3">
+                    <p class="text-lg">Did the team answer the review question correctly?</p>
+                    <div class="flex gap-4 w-full">
+                        <button onclick="handleQuestion(true)" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded action-btn">
+                            Correct ✅
+                        </button>
+                        <button onclick="handleQuestion(false)" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded action-btn">
+                            Incorrect ❌
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Phase 2: Action Choice -->
+                <div id="phase-action" class="w-full mt-4 hidden flex flex-col gap-3">
+                    <p class="text-lg text-green-300">Question Correct! Choose an action:</p>
+                    <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2">
+                        <button onclick="selectAction('ADVANCE')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-1 rounded action-btn text-sm">
+                            🏃 Advance
+                        </button>
+                        <button onclick="selectAction('SHIELD')" class="flex-1 bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-1 rounded action-btn text-sm">
+                            🛡️ Shield
+                        </button>
+                        <button onclick="selectAction('ATTACK')" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-1 rounded action-btn text-sm">
+                            ⚔️ Attack
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Phase 3: Attack Target Selection -->
+                <div id="phase-target" class="w-full mt-4 hidden flex flex-col gap-3">
+                    <p class="text-lg text-red-300">Who will you attack?</p>
+                    <select id="target-select" class="w-full p-2 rounded bg-gray-800 border border-red-600 text-white focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <!-- Options generated by JS -->
+                    </select>
+                    <div class="flex gap-2">
+                        <button onclick="confirmTarget()" class="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 rounded action-btn">
+                            Lock Target
+                        </button>
+                        <button onclick="cancelAction()" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded action-btn text-sm">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Phase 4: Dice Roll -->
+                <div id="phase-dice" class="w-full mt-6 hidden flex flex-col items-center gap-4">
+                    <p id="dice-instruction" class="text-lg font-bold text-yellow-400">Rolling to Advance!</p>
+                    <div class="dice-container">
+                        <div id="dice-element" class="dice">?</div>
+                    </div>
+                    <button id="btn-roll" onclick="rollDice()" class="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-3 px-6 rounded shadow-[0_0_10px_rgba(255,215,0,0.5)] action-btn title-font text-xl w-auto min-w-[200px]">
+                        ROLL DICE
+                    </button>
+                    <button id="btn-next-turn" onclick="nextTurn()" class="hidden w-full bg-gray-200 hover:bg-white text-black font-bold py-3 px-6 rounded action-btn title-font text-xl w-auto min-w-[200px]">
+                        End Turn
+                    </button>
+                </div>
+
+                <!-- Phase 5: Choose Path -->
+                <div id="phase-choose-path" class="w-full mt-4 hidden flex flex-col items-center gap-3">
+                    <p class="text-lg font-bold text-yellow-400">A Fork in the Dungeon!</p>
+                    <p class="text-sm text-gray-300">The path splits ahead. Click a highlighted room on the map below to select your destination.</p>
+                </div>
+
+            </div>
+
+            <!-- Activity Log -->
+            <div class="glass-panel rounded-xl p-4 flex flex-col w-full lg:w-1/3 max-h-[350px]">
+                <h2 class="text-xl title-font text-gray-300 border-b border-gray-600 pb-2 mb-2">Battle Log</h2>
+                <div id="log-container" class="flex-1 overflow-y-auto flex flex-col gap-2 pr-2 text-sm">
+                    <!-- Logs generated by JS -->
+                    <div class="text-gray-500 italic">Game has not started yet.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Board (Bottom Side) -->
+        <div class="w-full flex justify-center items-center relative mb-4 min-w-0 mt-2">
+            <div class="board-container">
+                <!-- SVG Connections Layer -->
+                <svg id="map-svg-layer" class="map-svg-layer"></svg>
+                <div class="board-grid" id="board-grid">
+                    <!-- 25 tiles generated by JS -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Winner Banner -->
+    <div id="winner-wrapper" class="hidden fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto">
+        <div id="winner-banner" class="bg-yellow-600 text-black text-[4rem] sm:text-[6rem] md:text-[9rem] lg:text-[12rem] leading-none font-black title-font p-8 md:p-20 rounded-[3rem] shadow-[0_0_100px_rgba(255,215,0,0.9)] w-[90vw] max-w-[1400px] text-center border-[8px] border-white animate-bounce flex flex-col items-center justify-center">
+        </div>
+    </div>
+
+    <script>
+        // --- GAME CONFIGURATION & STATE ---
+        const TOTAL_SPACES = 25;
+        const TEAM_COLORS = [
+            { bg: '#ef4444', text: '#ffffff', hex: '#ef4444' }, // Red
+            { bg: '#3b82f6', text: '#ffffff', hex: '#3b82f6' }, // Blue
+            { bg: '#10b981', text: '#ffffff', hex: '#10b981' }, // Green
+            { bg: '#f59e0b', text: '#ffffff', hex: '#f59e0b' }, // Yellow
+            { bg: '#8b5cf6', text: '#ffffff', hex: '#8b5cf6' }, // Purple
+            { bg: '#f97316', text: '#ffffff', hex: '#f97316' }  // Orange
+        ];
+
+        let DUNGEON_GRAPH = {}; // Will be generated dynamically
+
+        const SECRET_TYPES = [
+            { name: "Found Treasure!", effect: 2, msg: "Moved forward 2 spaces!" },
+            { name: "Attacked by Villagers!", effect: -2, msg: "Fell back 2 spaces!" },
+            { name: "Hidden Portal!", effect: 3, msg: "Teleported forward 3 spaces!" },
+            { name: "Trap Door!", effect: -3, msg: "Fell back 3 spaces!" },
+            { name: "Dragon Shrine!", effect: "shield", msg: "Gained an extra shield!" }
+        ];
+        let secrets = []; // Array of hidden events on the board
+
+        // Medieval map decorations (Ink style SVGS)
+        const DECOR_SVGS = [
+            // Mountains
+            `<svg class="w-4/5 h-4/5 m-auto opacity-[0.35] drop-shadow-sm" viewBox="0 0 100 100" fill="none" stroke="#4a2810" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M10 80 L35 30 L55 60 L75 20 L95 80 Z" /><path d="M35 30 L35 45 M75 20 L75 40 M55 60 L55 75"/><path d="M25 50 L35 60 L45 50 M65 40 L75 50 L85 40"/></svg>`,
+            // Pine Forest
+            `<svg class="w-4/5 h-4/5 m-auto opacity-[0.35] drop-shadow-sm" viewBox="0 0 100 100" fill="none" stroke="#4a2810" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M20 70 L35 30 L50 70 Z M35 70 L35 85" fill="rgba(74,40,16,0.1)"/><path d="M50 80 L70 20 L90 80 Z M70 80 L70 95" fill="rgba(74,40,16,0.1)"/><path d="M5 85 L20 45 L35 85 Z M20 85 L20 95" fill="rgba(74,40,16,0.1)"/></svg>`,
+            // Castle Tower
+            `<svg class="w-4/5 h-4/5 m-auto opacity-[0.35] drop-shadow-sm" viewBox="0 0 100 100" fill="none" stroke="#4a2810" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M25 90 L25 40 L15 40 L15 20 L30 20 L30 30 L40 30 L40 20 L50 20 L50 30 L60 30 L60 20 L75 20 L75 40 L65 40 L65 90 Z" fill="rgba(74,40,16,0.1)"/><path d="M40 90 L40 65 C40 55, 50 55, 50 65 L50 90"/><line x1="30" y1="50" x2="35" y2="50"/><line x1="55" y1="50" x2="60" y2="50"/></svg>`,
+            // Dragon Skull
+            `<svg class="w-4/5 h-4/5 m-auto opacity-30 drop-shadow-sm" viewBox="0 0 100 100" fill="none" stroke="#4a2810" stroke-width="2" stroke-linejoin="round"><path d="M25 50 C25 20, 75 20, 75 50 C75 75, 65 90, 50 90 C35 90, 25 75, 25 50 Z" fill="rgba(74,40,16,0.05)"/><circle cx="40" cy="55" r="6" fill="#4a2810"/><circle cx="60" cy="55" r="6" fill="#4a2810"/><path d="M45 15 L55 15 M40 25 L60 25 M35 35 L65 35" stroke-width="1"/><path d="M42 80 L42 90 M50 80 L50 90 M58 80 L58 90"/></svg>`,
+            // Crossed Swords
+            `<svg class="w-4/5 h-4/5 m-auto opacity-30 drop-shadow-sm" viewBox="0 0 100 100" fill="none" stroke="#4a2810" stroke-width="3" stroke-linecap="round"><line x1="25" y1="75" x2="75" y2="25"/><line x1="25" y1="25" x2="75" y2="75"/><path d="M20 80 L30 70 M70 30 L80 20 M20 20 L30 30 M70 70 L80 80" stroke-width="5"/><circle cx="50" cy="50" r="2" fill="#4a2810"/></svg>`
+        ];
+
+        // Traditional Compass Rose (Doubled size)
+        const COMPASS_ROSE_SVG = `<svg class="w-[1000%] h-[1000%] max-w-none m-auto opacity-100 drop-shadow-2xl z-0" viewBox="0 0 100 100" fill="none" stroke="#0f0703" stroke-width="1.5" stroke-linejoin="round">
+            <!-- Outer circles -->
+            <circle cx="50" cy="50" r="38" stroke-dasharray="2 3" stroke-width="1"/>
+            <circle cx="50" cy="50" r="32" stroke-width="2"/>
+            
+            <!-- Secondary points (NE, SE, SW, NW) -->
+            <path d="M50 50 L70 30 L55 50 L70 70 L50 55 L30 70 L45 50 L30 30 Z" fill="rgba(15,7,3,0.3)" stroke-width="1"/>
+            
+            <!-- Primary points (N, E, S, W) -->
+            <path d="M50 50 L42 50 L50 15 Z" fill="#0f0703"/>
+            <path d="M50 50 L58 50 L50 15 Z" fill="none"/>
+            <path d="M50 50 L50 42 L85 50 Z" fill="#0f0703"/>
+            <path d="M50 50 L50 58 L85 50 Z" fill="none"/>
+            <path d="M50 50 L58 50 L50 85 Z" fill="#0f0703"/>
+            <path d="M50 50 L42 50 L50 85 Z" fill="none"/>
+            <path d="M50 50 L50 58 L15 50 Z" fill="#0f0703"/>
+            <path d="M50 50 L50 42 L15 50 Z" fill="none"/>
+            
+            <circle cx="50" cy="50" r="4" fill="#0f0703"/>
+            
+            <!-- Text labels -->
+            <text x="46" y="10" font-size="8" font-family="serif" font-weight="900" fill="#0f0703" stroke="none">N</text>
+            <text x="46.5" y="96" font-size="8" font-family="serif" font-weight="900" fill="#0f0703" stroke="none">S</text>
+            <text x="91" y="53" font-size="8" font-family="serif" font-weight="900" fill="#0f0703" stroke="none">E</text>
+            <text x="4" y="53" font-size="8" font-family="serif" font-weight="900" fill="#0f0703" stroke="none">W</text>
+        </svg>`;
+
+        let state = {
+            teams: [],
+            currentTurnIndex: 0,
+            phase: 'QUESTION',
+            selectedAction: null,
+            targetTeamIndex: null,
+            reachableDestinations: [],
+            gameOver: false
+        };
+
+        // --- AUDIO SYSTEM (Tone.js) ---
+        let toneStarted = false;
+        const synths = {};
+
+        async function initAudio() {
+            if (!toneStarted) {
+                await Tone.start();
+                synths.advance = new Tone.Synth({ oscillator: { type: 'triangle' } }).toDestination();
+                synths.shield = new Tone.MetalSynth({
+                    frequency: 250, envelope: { attack: 0.001, decay: 0.8, release: 0.2 },
+                    harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5
+                }).toDestination();
+                synths.attack = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4 }).toDestination();
+                synths.secret = new Tone.FMSynth().toDestination();
+                synths.win = new Tone.PolySynth(Tone.Synth).toDestination();
+                synths.win.volume.value = -5;
+                toneStarted = true;
+            }
+        }
+
+        function playSound(type) {
+            if (!toneStarted) return;
+            const now = Tone.now();
+            try {
+                switch(type) {
+                    case 'advance':
+                        synths.advance.triggerAttackRelease("C5", "16n", now);
+                        synths.advance.triggerAttackRelease("E5", "16n", now + 0.15);
+                        synths.advance.triggerAttackRelease("G5", "8n", now + 0.3);
+                        break;
+                    case 'shield':
+                        synths.shield.triggerAttackRelease("8n", now);
+                        break;
+                    case 'attack':
+                        synths.attack.triggerAttackRelease("C1", "2n", now);
+                        break;
+                    case 'secret_good':
+                        synths.secret.triggerAttackRelease("C6", "16n", now);
+                        synths.secret.triggerAttackRelease("E6", "16n", now + 0.1);
+                        synths.secret.triggerAttackRelease("G6", "8n", now + 0.2);
+                        break;
+                    case 'secret_bad':
+                        synths.secret.triggerAttackRelease("C3", "16n", now);
+                        synths.secret.triggerAttackRelease("G2", "8n", now + 0.15);
+                        break;
+                    case 'win':
+                        synths.win.triggerAttackRelease(["C4", "E4", "G4"], "4n", now);
+                        synths.win.triggerAttackRelease(["F4", "A4", "C5"], "4n", now + 0.4);
+                        synths.win.triggerAttackRelease(["G4", "B4", "D5"], "4n", now + 0.8);
+                        synths.win.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now + 1.2);
+                        break;
+                }
+            } catch (e) {
+                console.error("Audio playback error:", e);
+            }
+        }
+
+        let teamIconsTemp = {};
+
+        // --- DOM ELEMENTS ---
+        const els = {
+            setupView: document.getElementById('setup-view'),
+            gameView: document.getElementById('game-view'),
+            teamCountSelect: document.getElementById('team-count'),
+            teamNamesContainer: document.getElementById('team-names-container'),
+            boardGrid: document.getElementById('board-grid'),
+            mapSvgLayer: document.getElementById('map-svg-layer'),
+            teamsDashboard: document.getElementById('teams-dashboard'),
+            logContainer: document.getElementById('log-container'),
+            winnerWrapper: document.getElementById('winner-wrapper'),
+            winnerBanner: document.getElementById('winner-banner'),
+            
+            ctrlActiveTeam: document.getElementById('control-active-team'),
+            phaseQuestion: document.getElementById('phase-question'),
+            phaseAction: document.getElementById('phase-action'),
+            phaseTarget: document.getElementById('phase-target'),
+            phaseDice: document.getElementById('phase-dice'),
+            phaseChoosePath: document.getElementById('phase-choose-path'),
+            targetSelect: document.getElementById('target-select'),
+            diceInstruction: document.getElementById('dice-instruction'),
+            diceElement: document.getElementById('dice-element'),
+            btnRoll: document.getElementById('btn-roll'),
+            btnNextTurn: document.getElementById('btn-next-turn'),
+            btnEndEarly: document.getElementById('btn-end-early')
+        };
+
+        els.teamCountSelect.addEventListener('change', updateSetupInputs);
+
+        function updateSetupInputs() {
+            const count = parseInt(els.teamCountSelect.value);
+            els.teamNamesContainer.innerHTML = '';
+            teamIconsTemp = {};
+            for (let i = 0; i < count; i++) {
+                const color = TEAM_COLORS[i];
+                els.teamNamesContainer.innerHTML += `
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-300">Team ${i + 1} Name & Icon</label>
+                        <div class="flex items-center gap-2">
+                            <label for="setup-icon-${i}" class="cursor-pointer relative flex-shrink-0 w-20 h-20 rounded-md border border-gray-600 bg-gray-700 flex items-center justify-center overflow-hidden transition hover:ring-2 hover:ring-orange-500" style="color: ${color.hex}" title="Click to upload custom team icon">
+                                <span id="preview-icon-${i}" class="text-4xl">🐉</span>
+                                <input type="file" id="setup-icon-${i}" accept="image/*" class="hidden" onchange="handleIconUpload(event, ${i})">
+                            </label>
+                            <input type="text" id="setup-team-${i}" value="Team ${i + 1}" class="flex-1 p-3 rounded-md bg-gray-800 border border-gray-600 text-white focus:ring-2 focus:ring-orange-500 outline-none text-lg">
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function handleIconUpload(event, teamIndex) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    teamIconsTemp[teamIndex] = e.target.result;
+                    document.getElementById(`preview-icon-${teamIndex}`).innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        updateSetupInputs();
+
+        function generateRandomBoard() {
+            const rows = 5;
+            const cols = 16;
+            let bestPath = [];
+            let attempts = 0;
+            
+            while (attempts < 100) {
+                attempts++;
+                let path = [{r: 5, c: 13, id: 1}];
+                let backtrackStack = [ {path: [...path]} ];
+                let found = false;
+                
+                while(backtrackStack.length > 0) {
+                    let current = backtrackStack.pop();
+                    let curPath = current.path;
+                    
+                    if (curPath.length === TOTAL_SPACES) {
+                        bestPath = curPath;
+                        found = true;
+                        break;
+                    }
+                    
+                    let last = curPath[curPath.length - 1];
+                    let neighbors = [
+                        {r: last.r - 1, c: last.c},
+                        {r: last.r + 1, c: last.c},
+                        {r: last.r, c: last.c - 1},
+                        {r: last.r, c: last.c + 1}
+                    ].sort(() => Math.random() - 0.5);
+                    
+                    for (let n of neighbors) {
+                        if (n.r >= 1 && n.r <= rows && n.c >= 1 && n.c <= cols) {
+                            if (n.r >= 4 && n.c >= 14) continue; 
+                            
+                            if (!curPath.some(p => p.r === n.r && p.c === n.c)) {
+                                let vCount = 0;
+                                if (curPath.some(p => p.r === n.r-1 && p.c === n.c)) vCount++;
+                                if (curPath.some(p => p.r === n.r+1 && p.c === n.c)) vCount++;
+                                if (curPath.some(p => p.r === n.r && p.c === n.c-1)) vCount++;
+                                if (curPath.some(p => p.r === n.r && p.c === n.c+1)) vCount++;
+                                
+                                if (vCount === 1) {
+                                    backtrackStack.push({path: [...curPath, {r: n.r, c: n.c, id: curPath.length + 1}]});
+                                }
+                            }
+                        }
+                    }
+                }
+                if (found) break;
+            }
+            
+            if (bestPath.length < TOTAL_SPACES) {
+                DUNGEON_GRAPH = {};
+                let curR = 5, curC = 13;
+                for (let i = 1; i <= TOTAL_SPACES; i++) {
+                    DUNGEON_GRAPH[i] = { r: curR, c: curC, next: i < TOTAL_SPACES ? [i+1] : [], prev: i > 1 ? [i-1] : [] };
+                    if (curR === 5 && curC > 2) curC--;
+                    else if (curC === 2 && curR > 2) curR--;
+                    else if (curR === 2) curC++;
+                    else curC++;
+                }
+            } else {
+                DUNGEON_GRAPH = {};
+                for (let i = 0; i < bestPath.length; i++) {
+                    DUNGEON_GRAPH[i+1] = {
+                        r: bestPath[i].r,
+                        c: bestPath[i].c,
+                        next: i < bestPath.length - 1 ? [i+2] : [],
+                        prev: i > 0 ? [i] : []
+                    };
+                }
+                
+                let branchesAdded = 0;
+                for (let i = 1; i <= TOTAL_SPACES; i++) {
+                    for (let j = i + 4; j <= TOTAL_SPACES; j++) {
+                        if (branchesAdded >= 2) break;
+                        let n1 = DUNGEON_GRAPH[i];
+                        let n2 = DUNGEON_GRAPH[j];
+                        let dist = Math.abs(n1.r - n2.r) + Math.abs(n1.c - n2.c);
+                        
+                        if (dist === 1 && !n1.next.includes(j)) {
+                            n1.next.push(j);
+                            n2.prev.push(i);
+                            branchesAdded++;
+                            break; 
+                        }
+                    }
+                }
+            }
+        }
+
+        function initSecrets() {
+            secrets = [];
+            let availablePositions = [];
+            for(let i=2; i<TOTAL_SPACES; i++) availablePositions.push(i);
+            availablePositions.sort(() => Math.random() - 0.5);
+            
+            for (let i = 0; i < 5; i++) {
+                secrets.push({
+                    type: SECRET_TYPES[i],
+                    pos: availablePositions[i]
+                });
+            }
+        }
+
+        function relocateSecret(secretObj) {
+            let availablePositions = [];
+            for(let i=2; i<TOTAL_SPACES; i++) {
+                if (!secrets.some(s => s.pos === i)) {
+                    availablePositions.push(i);
+                }
+            }
+            secretObj.pos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+        }
+
+        function triggerSecretCheck(team, callback) {
+            if (team.position === 0 || team.position === TOTAL_SPACES) return callback();
+
+            let secretIndex = secrets.findIndex(s => s.pos === team.position);
+            if (secretIndex !== -1) {
+                let s = secrets[secretIndex];
+                const isGood = s.type.effect === 'shield' || s.type.effect > 0;
+                playSound(isGood ? 'secret_good' : 'secret_bad');
+                
+                addLog("SECRET TRIGGERED!", `❓ ${team.name} stepped on a hidden event in room ${team.position}!`, '#fcd34d');
+                addLog("EVENT", `${s.type.name} - ${s.type.msg}`, '#fbbf24');
+                flashScreen('yellow');
+                
+                relocateSecret(s);
+                
+                setTimeout(() => {
+                    if (s.type.effect === 'shield') {
+                        let newShield = Math.floor(Math.random() * 6) + 1;
+                        team.shields.push(newShield);
+                        team.shields.sort((a, b) => a - b);
+                        addLog(team.name, `Gained a ${newShield} shield!`, team.color.hex);
+                        updateUI();
+                        callback();
+                    } else if (s.type.effect > 0) {
+                        let currentPos = team.position;
+                        for(let i=0; i < s.type.effect; i++) {
+                            let nextNodes = DUNGEON_GRAPH[currentPos].next;
+                            if (nextNodes && nextNodes.length > 0) currentPos = nextNodes[0]; 
+                            if (currentPos === TOTAL_SPACES) break;
+                        }
+                        team.position = currentPos;
+                        addLog(team.name, `Propelled to room ${team.position}.`, team.color.hex);
+                        updateUI();
+                        if (team.position === TOTAL_SPACES) triggerWin(team);
+                        else callback();
+                    } else {
+                        team.position = getBackwardDestination(team.position, Math.abs(s.type.effect));
+                        addLog(team.name, `Dragged back to room ${team.position}.`, team.color.hex);
+                        updateUI();
+                        callback();
+                    }
+                }, 1500);
+            } else {
+                callback();
+            }
+        }
+
+        function endMovementPhase() {
+            const team = state.teams[state.currentTurnIndex];
+            triggerSecretCheck(team, () => {
+                if (!state.gameOver) {
+                    state.phase = 'END';
+                    updateUI();
+                }
+            });
+        }
+
+        function startGame() {
+            initAudio();
+            const count = parseInt(els.teamCountSelect.value);
+            state.teams = [];
+            
+            for (let i = 0; i < count; i++) {
+                const nameInput = document.getElementById(`setup-team-${i}`).value.trim() || `Team ${i + 1}`;
+                state.teams.push({
+                    id: i,
+                    name: nameInput,
+                    color: TEAM_COLORS[i],
+                    icon: teamIconsTemp[i] || null,
+                    position: 0,
+                    shields: [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1]
+                });
+            }
+
+            state.currentTurnIndex = 0;
+            state.gameOver = false;
+            state.phase = 'QUESTION';
+            
+            els.setupView.classList.add('hidden');
+            els.gameView.classList.remove('hidden');
+            
+            generateRandomBoard();
+            initSecrets();
+            
+            addLog("System", "Game started! Prepare for battle.");
+            buildBoard();
+            updateUI();
+        }
+
+        function buildBoard() {
+            els.boardGrid.innerHTML = '';
+            els.mapSvgLayer.innerHTML = '';
+            
+            const getPercentX = (val) => ((val - 1) * (100/16)) + (50/16);
+            const getPercentY = (val) => ((val - 1) * (100/5)) + (50/5);
+            
+            let occupiedCells = new Set();
+            
+            for (let i = 1; i <= TOTAL_SPACES; i++) {
+                const node = DUNGEON_GRAPH[i];
+                occupiedCells.add(`${node.r},${node.c}`);
+                
+                node.next.forEach(nextId => {
+                    const nextNode = DUNGEON_GRAPH[nextId];
+                    const x1 = getPercentX(node.c) + '%';
+                    const y1 = getPercentY(node.r) + '%';
+                    const x2 = getPercentX(nextNode.c) + '%';
+                    const y2 = getPercentY(nextNode.r) + '%';
+                    
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+                    line.setAttribute('stroke', '#4a3322');
+                    line.setAttribute('stroke-width', '4');
+                    line.setAttribute('stroke-dasharray', '8 4');
+                    els.mapSvgLayer.appendChild(line);
+                });
+
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.id = `tile-${i}`;
+                tile.style.gridRow = node.r;
+                tile.style.gridColumn = node.c;
+                
+                if (i === 1) tile.classList.add('start-zone');
+                if (i === TOTAL_SPACES) tile.classList.add('end-zone');
+
+                tile.innerHTML = `<span class="tile-number">${i}</span>`;
+                
+                tile.addEventListener('click', () => {
+                    if (state.phase === 'CHOOSE_PATH' && state.reachableDestinations.includes(i)) {
+                        finalizeAdvance(i);
+                    }
+                });
+
+                els.boardGrid.appendChild(tile);
+            }
+            
+            for (let r = 4; r <= 5; r++) {
+                for (let c = 14; c <= 16; c++) {
+                    occupiedCells.add(`${r},${c}`);
+                }
+            }
+
+            let emptyCells = [];
+            for (let r = 1; r <= 5; r++) {
+                for (let c = 1; c <= 16; c++) {
+                    if (!occupiedCells.has(`${r},${c}`)) {
+                        emptyCells.push({r, c});
+                    }
+                }
+            }
+
+            // Strictly lock the compass rose into an available corner ((1,1), (5,1), (1,16), or (5,16))
+            const trueCorners = [
+                {r: 1, c: 1}, 
+                {r: 5, c: 1}, 
+                {r: 1, c: 16}, 
+                {r: 5, c: 16}
+            ];
+            
+            let compassCell = null;
+            let minNeighborCount = Infinity;
+
+            for (let p of trueCorners) {
+                let neighborCount = 0;
+                if (occupiedCells.has(`${p.r},${p.c}`)) continue;
+                
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        let checkR = p.r + dr;
+                        let checkC = p.c + dc;
+                        if (checkR >= 1 && checkR <= 5 && checkC >= 1 && checkC <= 16) {
+                            if (occupiedCells.has(`${checkR},${checkC}`)) {
+                                neighborCount++;
+                            }
+                        }
+                    }
+                }
+                if (neighborCount < minNeighborCount) {
+                    minNeighborCount = neighborCount;
+                    compassCell = p;
+                }
+            }
+
+            if (!compassCell) {
+                minNeighborCount = Infinity;
+                for (let p of trueCorners) {
+                    let neighborCount = 0;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            let checkR = p.r + dr;
+                            let checkC = p.c + dc;
+                            if (checkR >= 1 && checkR <= 5 && checkC >= 1 && checkC <= 16) {
+                                if (occupiedCells.has(`${checkR},${checkC}`)) {
+                                    neighborCount++;
+                                }
+                            }
+                        }
+                    }
+                    if (neighborCount < minNeighborCount) {
+                        minNeighborCount = neighborCount;
+                        compassCell = p;
+                    }
+                }
+            }
+
+            if (compassCell) {
+                emptyCells = emptyCells.filter(c => !(c.r === compassCell.r && c.c === compassCell.c));
+
+                let compassDiv = document.createElement('div');
+                compassDiv.className = 'pointer-events-none z-0 flex items-center justify-center p-1 sm:p-2 overflow-visible';
+                compassDiv.style.gridRow = compassCell.r;
+                compassDiv.style.gridColumn = compassCell.c;
+                compassDiv.innerHTML = COMPASS_ROSE_SVG;
+                
+                els.boardGrid.appendChild(compassDiv);
+            }
+
+            emptyCells.sort(() => Math.random() - 0.5);
+            let numDecor = Math.min(emptyCells.length, Math.floor(Math.random() * 11) + 24);
+            
+            for(let i = 0; i < numDecor; i++) {
+                let cell = emptyCells[i];
+                let decorType = Math.floor(Math.random() * DECOR_SVGS.length);
+                let svgContent = DECOR_SVGS[decorType];
+                
+                if (i >= numDecor / 2) {
+                    svgContent = svgContent
+                        .replace(/opacity-\[0\.35\]/g, 'opacity-[0.85]')
+                        .replace(/opacity-30/g, 'opacity-[0.85]')
+                        .replace(/#4a2810/g, '#1a0d05')
+                        .replace(/rgba\(74,40,16,0\.1\)/g, 'rgba(26,13,5,0.25)')
+                        .replace(/rgba\(74,40,16,0\.05\)/g, 'rgba(26,13,5,0.15)');
+                }
+                
+                let decorDiv = document.createElement('div');
+                decorDiv.className = 'pointer-events-none z-[2] flex items-center justify-center p-1 sm:p-2';
+                decorDiv.style.gridRow = cell.r;
+                decorDiv.style.gridColumn = cell.c;
+                decorDiv.innerHTML = svgContent;
+                
+                let rot = (Math.random() * 20) - 10;
+                decorDiv.firstElementChild.style.transform = `rotate(${rot}deg)`;
+                
+                els.boardGrid.appendChild(decorDiv);
+            }
+        }
+
+        function updateUI() {
+            renderDragonsOnBoard();
+            renderTeamsDashboard();
+            updateTeacherControls();
+        }
+
+        function renderDragonsOnBoard() {
+            document.querySelectorAll('.tile').forEach(t => {
+                Array.from(t.children).forEach(child => {
+                    if (child.classList.contains('dragon-token')) child.remove();
+                });
+            });
+
+            let baseContainer = document.getElementById('base-zone');
+            if (!baseContainer) {
+                baseContainer = document.createElement('div');
+                baseContainer.id = 'base-zone';
+                baseContainer.style.gridRow = '4 / 6';
+                baseContainer.style.gridColumn = '14 / 17';
+                baseContainer.className = 'border-2 border-[#5c4033] rounded flex gap-2 items-center justify-center p-2 relative z-10 m-1 shadow-[inset_0_0_15px_rgba(92,64,51,0.4),3px_3px_6px_rgba(0,0,0,0.4)]';
+                baseContainer.style.backgroundColor = 'rgba(235, 219, 188, 0.7)';
+                baseContainer.innerHTML = `
+                    <span class="absolute -top-3 left-2 bg-[#ebdbbc] border border-[#5c4033] px-1 text-[10px] font-bold font-serif text-[#5c4033] rounded-sm">BASE (START)</span>
+                    <div id="base-dragons" class="flex flex-wrap gap-2 justify-center items-center w-full h-full"></div>
+                `;
+                els.boardGrid.appendChild(baseContainer);
+            }
+            
+            const baseDragonsTarget = document.getElementById('base-dragons');
+            baseDragonsTarget.innerHTML = '';
+
+            state.teams.forEach(team => {
+                const token = document.createElement('div');
+                token.className = 'dragon-token';
+                token.style.backgroundColor = team.color.bg;
+                
+                if (team.icon) {
+                    token.innerHTML = `<img src="${team.icon}" class="w-full h-full object-cover rounded-full pointer-events-none">`;
+                    token.style.border = `4px solid ${team.color.bg}`;
+                } else {
+                    token.innerHTML = '🐉';
+                }
+                
+                token.title = `${team.name} (Shields: [${team.shields.join(', ')}])`;
+
+                if (team.position === 0) {
+                    baseDragonsTarget.appendChild(token);
+                } else {
+                    const tile = document.getElementById(`tile-${team.position}`);
+                    if (tile) tile.appendChild(token);
+                }
+            });
+        }
+
+        function renderTeamsDashboard() {
+            els.teamsDashboard.innerHTML = `
+                <h2 class="text-xl title-font text-gray-300 border-b border-gray-600 pb-2 mb-2">Dragon Flights</h2>
+            `;
+            
+            state.teams.forEach((team, index) => {
+                const isCurrent = index === state.currentTurnIndex;
+                
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-lg flex items-center justify-between border-l-4 transition-all ${isCurrent ? 'bg-gray-700 shadow-md transform scale-[1.02]' : 'bg-gray-800 opacity-70'}`;
+                card.style.borderLeftColor = team.color.hex;
+                
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center text-4xl shadow overflow-hidden flex-shrink-0" style="background-color: ${team.color.bg}">
+                            ${team.icon ? `<img src="${team.icon}" class="w-full h-full object-cover">` : '🐉'}
+                        </div>
+                        <div>
+                            <div class="font-bold text-white text-lg">${team.name}</div>
+                            <div class="text-sm text-gray-400">Pos: ${team.position === 0 ? 'Base' : team.position}</div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-400">Shields</div>
+                        <div class="font-bold text-lg ${team.shields.length > 0 ? 'text-teal-400' : 'text-gray-500'}">[${team.shields.join(', ')}]</div>
+                    </div>
+                `;
+                els.teamsDashboard.appendChild(card);
+            });
+        }
+
+        function updateTeacherControls() {
+            const currentTeam = state.teams[state.currentTurnIndex];
+            els.ctrlActiveTeam.innerHTML = `<span style="color:${currentTeam.color.hex}">${currentTeam.name}</span>'s Turn`;
+            
+            els.phaseQuestion.classList.add('hidden');
+            els.phaseAction.classList.add('hidden');
+            els.phaseTarget.classList.add('hidden');
+            els.phaseDice.classList.add('hidden');
+            els.phaseChoosePath.classList.add('hidden');
+            els.btnRoll.classList.remove('hidden');
+            els.btnNextTurn.classList.add('hidden');
+
+            if (state.gameOver) {
+                els.ctrlActiveTeam.innerHTML = `<span class="text-green-400">Game Over!</span>`;
+                if(els.btnEndEarly) els.btnEndEarly.classList.add('hidden');
+                return;
+            } else {
+                if(els.btnEndEarly) els.btnEndEarly.classList.remove('hidden');
+            }
+
+            document.querySelectorAll('.tile').forEach(t => t.classList.remove('glow-path'));
+
+            switch (state.phase) {
+                case 'QUESTION':
+                    els.phaseQuestion.classList.remove('hidden');
+                    break;
+                case 'ACTION':
+                    els.phaseAction.classList.remove('hidden');
+                    break;
+                case 'TARGET':
+                    els.phaseTarget.classList.remove('hidden');
+                    populateTargetDropdown();
+                    break;
+                case 'DICE':
+                    els.phaseDice.classList.remove('hidden');
+                    els.diceElement.textContent = '?';
+                    
+                    let instruction = '';
+                    if (state.selectedAction === 'ADVANCE') instruction = 'Rolling to Advance!';
+                    if (state.selectedAction === 'SHIELD') instruction = 'Rolling for a new Shield!';
+                    if (state.selectedAction === 'ATTACK') {
+                        const target = state.teams.find(t => t.id === parseInt(state.targetTeamIndex));
+                        instruction = `Rolling to Attack ${target.name}!`;
+                    }
+                    els.diceInstruction.textContent = instruction;
+                    break;
+                case 'CHOOSE_PATH':
+                    els.phaseChoosePath.classList.remove('hidden');
+                    state.reachableDestinations.forEach(pos => {
+                        const tile = document.getElementById(`tile-${pos}`);
+                        if (tile) tile.classList.add('glow-path');
+                    });
+                    break;
+                case 'END':
+                    els.phaseDice.classList.remove('hidden');
+                    els.btnRoll.classList.add('hidden');
+                    els.btnNextTurn.classList.remove('hidden');
+                    break;
+            }
+        }
+
+        function handleQuestion(isCorrect) {
+            const team = state.teams[state.currentTurnIndex];
+            if (isCorrect) {
+                addLog(team.name, `Answered correctly! Preparing for action...`, team.color.hex);
+                state.phase = 'ACTION';
+            } else {
+                addLog(team.name, `Answered incorrectly. Turn skipped.`, team.color.hex);
+                state.phase = 'END';
+            }
+            updateUI();
+        }
+
+        function selectAction(action) {
+            state.selectedAction = action;
+            if (action === 'ATTACK') {
+                state.phase = 'TARGET';
+            } else {
+                state.phase = 'DICE';
+            }
+            updateUI();
+        }
+
+        function populateTargetDropdown() {
+            els.targetSelect.innerHTML = '';
+            state.teams.forEach(team => {
+                if (team.id !== state.teams[state.currentTurnIndex].id) {
+                    const opt = document.createElement('option');
+                    opt.value = team.id;
+                    opt.textContent = `${team.name} (Pos: ${team.position}, Shields: [${team.shields.join(', ')}])`;
+                    els.targetSelect.appendChild(opt);
+                }
+            });
+        }
+
+        function confirmTarget() {
+            state.targetTeamIndex = els.targetSelect.value;
+            state.phase = 'DICE';
+            updateUI();
+        }
+
+        function cancelAction() {
+            state.phase = 'ACTION';
+            updateUI();
+        }
+
+        function rollDice() {
+            els.btnRoll.disabled = true;
+            els.diceElement.classList.add('rolling');
+            
+            setTimeout(() => {
+                els.diceElement.classList.remove('rolling');
+                els.btnRoll.disabled = false;
+                
+                const roll = Math.floor(Math.random() * 6) + 1;
+                els.diceElement.textContent = roll;
+                
+                applyRollResult(roll);
+            }, 600);
+        }
+
+        function applyRollResult(roll) {
+            const team = state.teams[state.currentTurnIndex];
+            
+            if (state.selectedAction === 'ADVANCE') {
+                const destinations = getReachableDestinations(team.position, roll);
+                
+                if (destinations.length === 1) {
+                    finalizeAdvance(destinations[0], roll);
+                    return;
+                } else if (destinations.length > 1) {
+                    playSound('advance');
+                    state.reachableDestinations = destinations;
+                    state.phase = 'CHOOSE_PATH';
+                    addLog(team.name, `Rolled a ${roll} and reached a fork! Waiting for choice...`, team.color.hex);
+                    updateUI();
+                    return; 
+                }
+            } 
+            else if (state.selectedAction === 'SHIELD') {
+                playSound('shield');
+                team.shields.push(roll);
+                team.shields.sort((a, b) => a - b);
+                addLog(team.name, `Rolled a ${roll} and added it to their shields!`, team.color.hex);
+            } 
+            else if (state.selectedAction === 'ATTACK') {
+                playSound('attack');
+                const targetId = parseInt(state.targetTeamIndex);
+                const targetTeam = state.teams.find(t => t.id === targetId);
+                
+                let winningShieldIndex = -1;
+                let minWinningValue = Infinity;
+
+                for (let i = 0; i < targetTeam.shields.length; i++) {
+                    let s = targetTeam.shields[i];
+                    if (s >= roll && s < minWinningValue) {
+                        minWinningValue = s;
+                        winningShieldIndex = i;
+                    }
+                }
+
+                if (winningShieldIndex !== -1) {
+                    const usedShield = targetTeam.shields[winningShieldIndex];
+                    targetTeam.shields.splice(winningShieldIndex, 1);
+
+                    if (usedShield === roll) {
+                        const atkLoss = 5;
+                        team.position = getBackwardDestination(team.position, atkLoss);
+                        
+                        const defDist = getDistanceFromStart(targetTeam.position);
+                        const defLoss = Math.min(5, Math.floor(defDist / 2));
+                        targetTeam.position = getBackwardDestination(targetTeam.position, defLoss);
+
+                        addLog("BATTLE", `⚔️ TIE! ${team.name} rolled ${roll} against ${targetTeam.name}'s shield of ${usedShield}.`, '#f59e0b');
+                        addLog(team.name, `Pushed back 5 spaces to room ${team.position}.`, '#ef4444');
+                        addLog(targetTeam.name, `Shield broken and pushed back ${defLoss} spaces to room ${targetTeam.position}.`, '#ef4444');
+                    } else {
+                        addLog("BATTLE", `🛡️ ${targetTeam.name} defended with a ${usedShield} shield against ${team.name}'s ${roll}!`, '#10b981');
+                        addLog(targetTeam.name, `Used one shield (Value: ${usedShield}).`, '#a7f3d0');
+                    }
+                } else {
+                    targetTeam.position = 0; 
+                    targetTeam.shields = [];
+                    addLog("BATTLE", `⚔️ ${team.name} rolled ${roll} and CRUSHED ${targetTeam.name}!`, '#ff4444');
+                    addLog(targetTeam.name, `Defeated! Returned to Base with no shields.`, '#ef4444');
+                    flashScreen('red');
+                }
+            }
+
+            endMovementPhase();
+        }
+
+        function getReachableDestinations(startPos, stepsLeft) {
+            let queue = [{ pos: startPos, steps: 0 }];
+            let destinations = new Set();
+            
+            while (queue.length > 0) {
+                let current = queue.shift();
+                
+                if (current.steps === stepsLeft || current.pos === TOTAL_SPACES) {
+                    destinations.add(current.pos);
+                    continue;
+                }
+                
+                let nextNodes = current.pos === 0 ? [1] : DUNGEON_GRAPH[current.pos].next;
+                
+                if (!nextNodes || nextNodes.length === 0) {
+                    destinations.add(current.pos);
+                    continue;
+                }
+
+                for (let nextPos of nextNodes) {
+                    queue.push({ pos: nextPos, steps: current.steps + 1 });
+                }
+            }
+            return Array.from(destinations);
+        }
+
+        function finalizeAdvance(pos, rollVal = null) {
+            playSound('advance');
+            const team = state.teams[state.currentTurnIndex];
+            team.position = pos;
+            
+            let msg = rollVal ? `Rolled a ${rollVal} and advanced to room ${pos}.` : `Chose path and advanced to room ${pos}.`;
+            addLog(team.name, msg, team.color.hex);
+            
+            if (team.position === TOTAL_SPACES) {
+                triggerWin(team);
+                return;
+            }
+            
+            endMovementPhase();
+        }
+
+        function getBackwardDestination(startPos, spacesToLose) {
+            if (startPos === 0 || spacesToLose === 0) return startPos;
+            let currentPos = startPos;
+            
+            for (let i = 0; i < spacesToLose; i++) {
+                if (currentPos === 0 || currentPos === 1) {
+                    currentPos = 0;
+                    break;
+                }
+                let prevNodes = DUNGEON_GRAPH[currentPos].prev;
+                if (prevNodes && prevNodes.length > 0) {
+                    currentPos = prevNodes[0]; 
+                } else {
+                    currentPos = 0;
+                    break;
+                }
+            }
+            return currentPos;
+        }
+
+        function getDistanceFromStart(pos) {
+            if (pos === 0) return 0;
+            let queue = [{ node: 1, dist: 1 }];
+            let visited = new Set([1]);
+            
+            while (queue.length > 0) {
+                let current = queue.shift();
+                if (current.node === pos) return current.dist;
+                
+                DUNGEON_GRAPH[current.node].next.forEach(n => {
+                    if (!visited.has(n)) {
+                        visited.add(n);
+                        queue.push({ node: n, dist: current.dist + 1 });
+                    }
+                });
+            }
+            return 0;
+        }
+
+        function nextTurn() {
+            state.currentTurnIndex = (state.currentTurnIndex + 1) % state.teams.length;
+            state.phase = 'QUESTION';
+            state.selectedAction = null;
+            state.targetTeamIndex = null;
+            updateUI();
+        }
+
+        function triggerWin(winningTeam) {
+            state.gameOver = true;
+            state.phase = 'END';
+            playSound('win');
+            els.winnerBanner.innerHTML = `${winningTeam.name}<br/>WINS!`;
+            els.winnerWrapper.classList.remove('hidden');
+            addLog("SYSTEM", `🏆 ${winningTeam.name} has reached the end and won the game!`, '#f1c40f');
+            updateUI();
+        }
+
+        function endGameEarly() {
+            let maxPos = Math.max(...state.teams.map(t => t.position));
+            let leaders = state.teams.filter(t => t.position === maxPos);
+            
+            state.gameOver = true;
+            state.phase = 'END';
+            playSound('win');
+            
+            let winnerText = "";
+            if (leaders.length === 1) {
+                winnerText = `${leaders[0].name}<br/>WINS!`;
+                addLog("SYSTEM", `🏆 The teacher ended the game early. ${leaders[0].name} wins by being in the lead!`, '#f1c40f');
+            } else {
+                let names = leaders.map(l => l.name).join(" & ");
+                winnerText = `TIE FOR WIN:<br/>${names}`;
+                addLog("SYSTEM", `🏆 The teacher ended the game early. Tie for the lead: ${names}!`, '#f1c40f');
+            }
+            
+            els.winnerBanner.innerHTML = winnerText;
+            els.winnerWrapper.classList.remove('hidden');
+            updateUI();
+        }
+
+        function addLog(entity, message, color = '#ffffff') {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const logItem = document.createElement('div');
+            logItem.className = 'border-b border-gray-700 pb-1 mb-1';
+            logItem.innerHTML = `<span class="text-xs text-gray-500 mr-2">[${time}]</span> <strong style="color: ${color}">${entity}:</strong> <span class="text-gray-300">${message}</span>`;
+            els.logContainer.appendChild(logItem);
+            els.logContainer.scrollTop = els.logContainer.scrollHeight;
+        }
+
+        function flashScreen(colorName) {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            
+            let hexColor = 'rgba(255,255,255,0.4)';
+            if (colorName === 'red') hexColor = 'rgba(255,0,0,0.4)';
+            if (colorName === 'gold' || colorName === 'yellow') hexColor = 'rgba(251, 191, 36, 0.5)';
+            
+            overlay.style.backgroundColor = hexColor;
+            overlay.style.zIndex = '9999';
+            overlay.style.pointerEvents = 'none';
+            overlay.style.transition = 'opacity 0.5s ease-out';
+            document.body.appendChild(overlay);
+            
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 500);
+            }, 100);
+        }
+
+        els.logContainer.innerHTML = '';
+    </script>
+</body>
+</html>

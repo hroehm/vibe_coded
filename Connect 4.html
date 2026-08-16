@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect 4 Class Review</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --team1-color-light: #fca5a5;
+            --team1-color: #ef4444;
+            --team1-color-dark: #991b1b;
+            
+            --team2-color-light: #fef08a;
+            --team2-color: #eab308;
+            --team2-color-dark: #854d0e;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(-45deg, #4f46e5, #ec4899, #8b5cf6, #3b82f6);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Board Styles */
+        .board-container {
+            background-color: #1d4ed8; /* blue-700 */
+            padding: 12px;
+            border-radius: 1rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 6px 15px rgba(255,255,255,0.2);
+            border: 4px solid #1e40af; /* blue-800 */
+        }
+
+        .board {
+            display: flex;
+            gap: 8px;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+
+        .column.active:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            background-color: #0f172a; /* slate-900 (empty hole) */
+            border-radius: 50%;
+            box-shadow: inset 0 6px 10px rgba(0,0,0,0.7), 0 2px 4px rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 640px) {
+            .cell {
+                width: 65px;
+                height: 65px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .cell {
+                width: 80px;
+                height: 80px;
+            }
+        }
+
+        .token {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: absolute;
+            top: 0; left: 0;
+            opacity: 0;
+        }
+
+        .token.red {
+            background: radial-gradient(circle at 30% 30%, var(--team1-color-light), var(--team1-color), var(--team1-color-dark));
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            opacity: 1;
+            animation: drop-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        .token.yellow {
+            background: radial-gradient(circle at 30% 30%, var(--team2-color-light), var(--team2-color), var(--team2-color-dark));
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            opacity: 1;
+            animation: drop-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        @keyframes drop-in {
+            0% { transform: translateY(-800%); }
+            60% { transform: translateY(10%); }
+            80% { transform: translateY(-5%); }
+            100% { transform: translateY(0); }
+        }
+
+        .win-pulse {
+            animation: winner-pulse 1s infinite alternate;
+        }
+
+        @keyframes winner-pulse {
+            from { box-shadow: 0 0 10px #fff, 0 0 20px #fff; transform: scale(1); }
+            to { box-shadow: 0 0 20px #fff, 0 0 30px #fff; transform: scale(1.1); }
+        }
+
+        .team-badge-red {
+            background: radial-gradient(circle at 30% 30%, var(--team1-color), var(--team1-color-dark));
+            border: 3px solid white;
+        }
+        
+        .team-badge-yellow {
+            background: radial-gradient(circle at 30% 30%, var(--team2-color), var(--team2-color-dark));
+            border: 3px solid white;
+            color: #451a03; /* text-orange-950 for contrast */
+        }
+
+        /* Bounce animation for active turn */
+        .active-turn-indicator {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .inactive-panel {
+            opacity: 0.5;
+            transform: scale(0.96);
+            pointer-events: none;
+            filter: grayscale(0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .active-panel {
+            opacity: 1;
+            transform: scale(1);
+            filter: grayscale(0);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hide {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4">
+
+    <div id="setup-screen" class="w-full max-w-2xl glass-panel rounded-3xl p-8 flex flex-col items-center text-center space-y-8 mt-10">
+        <div class="space-y-2">
+            <h1 class="text-5xl md:text-6xl font-black text-white drop-shadow-lg tracking-wider">CONNECT 4</h1>
+            <h2 class="text-2xl font-bold text-yellow-300 drop-shadow-md">Class Review Edition</h2>
+        </div>
+        
+        <div class="w-full space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Team 1 Setup -->
+                <div class="bg-white/20 p-6 rounded-2xl flex flex-col space-y-4 shadow-inner">
+                    <h3 class="text-xl font-bold text-red-300">Team 1</h3>
+                    <input type="text" id="team1-name" value="Team Red" class="w-full p-3 rounded-xl text-gray-800 font-bold text-center text-lg focus:outline-none focus:ring-4 focus:ring-red-400" placeholder="Enter Team Name">
+                </div>
+                <!-- Team 2 Setup -->
+                <div class="bg-white/20 p-6 rounded-2xl flex flex-col space-y-4 shadow-inner">
+                    <h3 class="text-xl font-bold text-yellow-300">Team 2</h3>
+                    <input type="text" id="team2-name" value="Team Yellow" class="w-full p-3 rounded-xl text-gray-800 font-bold text-center text-lg focus:outline-none focus:ring-4 focus:ring-yellow-400" placeholder="Enter Team Name">
+                </div>
+            </div>
+
+            <div class="bg-white/20 p-6 rounded-2xl flex flex-col items-center space-y-4 shadow-inner">
+                <h3 class="text-xl font-bold text-white">How many rounds?</h3>
+                <div class="flex items-center space-x-4">
+                    <button onclick="changeRounds(-1)" class="w-12 h-12 bg-white/30 rounded-full text-2xl font-bold hover:bg-white/50 transition">-</button>
+                    <span id="rounds-display" class="text-4xl font-black w-16 text-center">3</span>
+                    <button onclick="changeRounds(1)" class="w-12 h-12 bg-white/30 rounded-full text-2xl font-bold hover:bg-white/50 transition">+</button>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="startGame()" class="w-full py-4 text-2xl font-black bg-gradient-to-r from-green-400 to-green-600 rounded-2xl shadow-xl hover:scale-105 hover:from-green-500 hover:to-green-700 transition-all text-white uppercase tracking-widest">
+            Start Game!
+        </button>
+    </div>
+
+    <div id="game-screen" class="w-full h-full min-h-[90vh] flex flex-col items-center hide p-4 xl:p-8 space-y-6">
+        
+        <!-- Header: Round Info ONLY (Scores moved to sides) -->
+        <div class="w-full max-w-xl flex justify-center items-center glass-panel rounded-2xl p-4 shadow-xl">
+            <div class="flex flex-col items-center">
+                <div class="text-sm uppercase tracking-widest text-indigo-200 font-bold">Round</div>
+                <div class="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-300 drop-shadow-sm">
+                    <span id="ui-current-round">1</span> / <span id="ui-total-rounds">3</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex flex-col xl:flex-row justify-between items-center xl:items-stretch gap-8 flex-1">
+            
+            <!-- Left Side: Team 1 -->
+            <div id="panel-team1" class="w-full xl:w-1/4 glass-panel rounded-3xl p-6 flex flex-col items-center justify-between min-h-[400px]">
+                <div class="flex flex-col items-center w-full">
+                    <h2 id="ui-team1-name" class="text-3xl lg:text-4xl font-black mb-4 text-center break-words w-full text-red-200 drop-shadow-md">Team Red</h2>
+                    <div id="ui-team1-badge" class="team-badge-red w-32 h-32 rounded-full flex items-center justify-center text-6xl font-black shadow-[0_0_20px_rgba(239,68,68,0.4)] mb-6 border-4">0</div>
+                </div>
+                
+                <div id="t1-controls" class="w-full flex flex-col items-center text-center mt-auto">
+                    <h3 id="t1-turn-indicator" class="text-2xl font-black active-turn-indicator mb-4 text-red-300 drop-shadow-md uppercase tracking-wider">Your Turn!</h3>
+                    
+                    <div id="t1-question" class="w-full flex flex-col gap-3">
+                        <button onclick="handleCorrect()" class="w-full py-5 px-4 bg-gradient-to-r from-green-400 to-green-600 rounded-xl text-xl font-black shadow-[0_6px_0_#166534] hover:shadow-[0_4px_0_#166534] hover:translate-y-[2px] transition-all active:shadow-none active:translate-y-[6px]">
+                            ✅ CORRECT
+                        </button>
+                        <button onclick="handleIncorrect()" class="w-full py-5 px-4 bg-gradient-to-r from-red-500 to-red-700 rounded-xl text-xl font-black shadow-[0_6px_0_#7f1d1d] hover:shadow-[0_4px_0_#7f1d1d] hover:translate-y-[2px] transition-all active:shadow-none active:translate-y-[6px]">
+                            ❌ INCORRECT (SKIP)
+                        </button>
+                    </div>
+                    
+                    <div id="t1-dropping" class="w-full hide">
+                        <p class="text-xl font-bold text-green-300 animate-pulse bg-black/40 py-4 px-4 rounded-2xl border border-green-500/30">
+                            Awesome! Tap a column to drop your piece! 👇
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: The Connect 4 Board -->
+            <div class="flex-1 flex justify-center items-center py-4">
+                <div class="board-container">
+                    <div id="game-board" class="board">
+                        <!-- Columns injected by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Team 2 -->
+            <div id="panel-team2" class="w-full xl:w-1/4 glass-panel rounded-3xl p-6 flex flex-col items-center justify-between min-h-[400px]">
+                <div class="flex flex-col items-center w-full">
+                    <h2 id="ui-team2-name" class="text-3xl lg:text-4xl font-black mb-4 text-center break-words w-full text-yellow-300 drop-shadow-md">Team Yellow</h2>
+                    <div id="ui-team2-badge" class="team-badge-yellow w-32 h-32 rounded-full flex items-center justify-center text-6xl font-black shadow-[0_0_20px_rgba(234,179,8,0.4)] mb-6 border-4">0</div>
+                </div>
+                
+                <div id="t2-controls" class="w-full flex flex-col items-center text-center mt-auto">
+                    <h3 id="t2-turn-indicator" class="text-2xl font-black active-turn-indicator mb-4 text-yellow-300 drop-shadow-md uppercase tracking-wider">Your Turn!</h3>
+                    
+                    <div id="t2-question" class="w-full flex flex-col gap-3">
+                        <button onclick="handleCorrect()" class="w-full py-5 px-4 bg-gradient-to-r from-green-400 to-green-600 rounded-xl text-xl font-black shadow-[0_6px_0_#166534] hover:shadow-[0_4px_0_#166534] hover:translate-y-[2px] transition-all active:shadow-none active:translate-y-[6px]">
+                            ✅ CORRECT
+                        </button>
+                        <button onclick="handleIncorrect()" class="w-full py-5 px-4 bg-gradient-to-r from-red-500 to-red-700 rounded-xl text-xl font-black shadow-[0_6px_0_#7f1d1d] hover:shadow-[0_4px_0_#7f1d1d] hover:translate-y-[2px] transition-all active:shadow-none active:translate-y-[6px]">
+                            ❌ INCORRECT (SKIP)
+                        </button>
+                    </div>
+                    
+                    <div id="t2-dropping" class="w-full hide">
+                        <p class="text-xl font-bold text-green-300 animate-pulse bg-black/40 py-4 px-4 rounded-2xl border border-green-500/30">
+                            Awesome! Tap a column to drop your piece! 👇
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Round Over Modal -->
+    <div id="round-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hide backdrop-blur-sm px-4">
+        <div class="glass-panel p-10 rounded-3xl text-center max-w-lg w-full transform scale-100 transition-transform">
+            <h2 id="round-winner-title" class="text-5xl font-black mb-4 drop-shadow-lg">Team Wins!</h2>
+            <p class="text-xl mb-8">They take the round.</p>
+            <button onclick="nextRound()" class="w-full py-4 text-2xl font-black bg-blue-500 rounded-xl shadow-[0_6px_0_#1e3a8a] hover:bg-blue-400 hover:translate-y-[2px] hover:shadow-[0_4px_0_#1e3a8a] transition-all active:shadow-none active:translate-y-[6px]">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hide backdrop-blur-md px-4">
+        <div class="glass-panel p-10 rounded-3xl text-center max-w-2xl w-full">
+            <h2 class="text-6xl font-black mb-2 text-yellow-300 drop-shadow-[0_0_15px_rgba(253,224,71,0.5)]">GAME OVER</h2>
+            <h3 id="overall-winner-text" class="text-4xl font-bold mb-8 mt-4 text-white">Team Red Wins the Match!</h3>
+            
+            <div class="flex justify-center gap-8 mb-10">
+                <div class="flex flex-col items-center">
+                    <span id="final-team1-name" class="text-xl font-bold mb-2">Team Red</span>
+                    <div id="final-team1-score" class="team-badge-red w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black shadow-2xl">3</div>
+                </div>
+                <div class="text-5xl font-black text-gray-400 flex items-center">-</div>
+                <div class="flex flex-col items-center">
+                    <span id="final-team2-name" class="text-xl font-bold mb-2">Team Yellow</span>
+                    <div id="final-team2-score" class="team-badge-yellow w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black shadow-2xl">1</div>
+                </div>
+            </div>
+
+            <button onclick="resetGameToSetup()" class="w-full py-4 text-2xl font-black bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl shadow-[0_6px_0_#831843] hover:translate-y-[2px] hover:shadow-[0_4px_0_#831843] transition-all active:shadow-none active:translate-y-[6px]">
+                Play Again
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Constants & State
+        const ROWS = 6;
+        const COLS = 7;
+        
+        let state = {
+            totalRounds: 3,
+            currentRound: 1,
+            team1: { name: "Team Red", colorClass: "red", score: 0 },
+            team2: { name: "Team Yellow", colorClass: "yellow", score: 0 },
+            currentPlayer: 1, 
+            startingPlayer: 1, // Alternates each round
+            phase: 'setup', // setup, question, dropping
+            boardData: [] // 2D array [col][row] where row 0 is bottom
+        };
+
+        // DOM Elements
+        const elSetup = document.getElementById('setup-screen');
+        const elGame = document.getElementById('game-screen');
+        const elRoundModal = document.getElementById('round-modal');
+        const elGameOverModal = document.getElementById('game-over-modal');
+        const boardContainer = document.getElementById('game-board');
+
+        // Setup Controls
+        function changeRounds(delta) {
+            state.totalRounds += delta;
+            if (state.totalRounds < 1) state.totalRounds = 1;
+            if (state.totalRounds > 10) state.totalRounds = 10;
+            document.getElementById('rounds-display').innerText = state.totalRounds;
+        }
+
+        function startGame() {
+            // Get names
+            const t1Name = document.getElementById('team1-name').value.trim() || "Team Red";
+            const t2Name = document.getElementById('team2-name').value.trim() || "Team Yellow";
+            
+            state.team1.name = t1Name;
+            state.team2.name = t2Name;
+            state.team1.score = 0;
+            state.team2.score = 0;
+            state.currentRound = 1;
+            state.startingPlayer = 1;
+            state.currentPlayer = 1;
+            
+            updateHeaderUI();
+            
+            elSetup.classList.add('hide');
+            elGame.classList.remove('hide');
+            
+            initRound();
+        }
+
+        function initRound() {
+            // Reset board data: array of COLS, each an array of up to ROWS items
+            state.boardData = Array.from({ length: COLS }, () => []);
+            state.currentPlayer = state.startingPlayer;
+            state.phase = 'question';
+            
+            buildBoardUI();
+            updateTurnUI();
+            updateHeaderUI();
+        }
+
+        function buildBoardUI() {
+            boardContainer.innerHTML = '';
+            for (let c = 0; c < COLS; c++) {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'column';
+                colDiv.dataset.col = c;
+                colDiv.onclick = () => handleColumnClick(c);
+                
+                // We create slots from top to bottom (visually).
+                // Array index 0 is bottom, ROWS-1 is top.
+                // So visually, we render row ROWS-1 down to 0
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'cell';
+                    
+                    const tokenDiv = document.createElement('div');
+                    tokenDiv.className = 'token';
+                    tokenDiv.id = `token-${c}-${r}`;
+                    
+                    cellDiv.appendChild(tokenDiv);
+                    colDiv.appendChild(cellDiv);
+                }
+                boardContainer.appendChild(colDiv);
+            }
+        }
+
+        function updateHeaderUI() {
+            document.getElementById('ui-team1-name').innerText = state.team1.name;
+            document.getElementById('ui-team1-badge').innerText = state.team1.score;
+            document.getElementById('ui-team2-name').innerText = state.team2.name;
+            document.getElementById('ui-team2-badge').innerText = state.team2.score;
+            document.getElementById('ui-current-round').innerText = state.currentRound;
+            document.getElementById('ui-total-rounds').innerText = state.totalRounds;
+        }
+
+        function updateTurnUI() {
+            const panel1 = document.getElementById('panel-team1');
+            const panel2 = document.getElementById('panel-team2');
+            
+            const t1Question = document.getElementById('t1-question');
+            const t1Dropping = document.getElementById('t1-dropping');
+            const t1Indicator = document.getElementById('t1-turn-indicator');
+            
+            const t2Question = document.getElementById('t2-question');
+            const t2Dropping = document.getElementById('t2-dropping');
+            const t2Indicator = document.getElementById('t2-turn-indicator');
+            
+            const columns = document.querySelectorAll('.column');
+
+            // Reset visibility
+            t1Question.classList.add('hide');
+            t1Dropping.classList.add('hide');
+            t1Indicator.classList.add('hide');
+            
+            t2Question.classList.add('hide');
+            t2Dropping.classList.add('hide');
+            t2Indicator.classList.add('hide');
+            
+            if (state.currentPlayer === 1) {
+                // Team 1 is Active
+                panel1.classList.remove('inactive-panel');
+                panel1.classList.add('active-panel');
+                panel2.classList.add('inactive-panel');
+                panel2.classList.remove('active-panel');
+                
+                t1Indicator.classList.remove('hide');
+                
+                if (state.phase === 'question') {
+                    t1Question.classList.remove('hide');
+                    columns.forEach(col => col.classList.remove('active'));
+                } else if (state.phase === 'dropping') {
+                    t1Dropping.classList.remove('hide');
+                    columns.forEach(col => col.classList.add('active'));
+                }
+            } else {
+                // Team 2 is Active
+                panel2.classList.remove('inactive-panel');
+                panel2.classList.add('active-panel');
+                panel1.classList.add('inactive-panel');
+                panel1.classList.remove('active-panel');
+                
+                t2Indicator.classList.remove('hide');
+                
+                if (state.phase === 'question') {
+                    t2Question.classList.remove('hide');
+                    columns.forEach(col => col.classList.remove('active'));
+                } else if (state.phase === 'dropping') {
+                    t2Dropping.classList.remove('hide');
+                    columns.forEach(col => col.classList.add('active'));
+                }
+            }
+        }
+
+        function handleCorrect() {
+            if (state.phase !== 'question') return;
+            state.phase = 'dropping';
+            updateTurnUI();
+        }
+
+        function handleIncorrect() {
+            if (state.phase !== 'question') return;
+            // Skip turn
+            switchPlayer();
+            updateTurnUI();
+        }
+
+        function switchPlayer() {
+            state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
+            state.phase = 'question';
+        }
+
+        function handleColumnClick(colIndex) {
+            if (state.phase !== 'dropping') return;
+            
+            const colData = state.boardData[colIndex];
+            if (colData.length >= ROWS) {
+                // Column full - visual shake (optional but good UX)
+                const colEl = document.querySelector(`.column[data-col="${colIndex}"]`);
+                colEl.style.animation = 'none';
+                colEl.offsetHeight; // trigger reflow
+                colEl.style.animation = 'bounce 0.3s';
+                return; // Do nothing, let them pick another column
+            }
+
+            // Drop piece
+            const rowIndex = colData.length;
+            colData.push(state.currentPlayer);
+            
+            // Update UI token
+            const tokenEl = document.getElementById(`token-${colIndex}-${rowIndex}`);
+            const colorClass = state.currentPlayer === 1 ? state.team1.colorClass : state.team2.colorClass;
+            tokenEl.classList.add(colorClass);
+
+            // Check Win condition
+            if (checkWin(colIndex, rowIndex, state.currentPlayer)) {
+                handleRoundWin(state.currentPlayer);
+            } else if (checkDraw()) {
+                handleRoundWin('draw');
+            } else {
+                switchPlayer();
+                updateTurnUI();
+            }
+        }
+
+        function checkWin(c, r, player) {
+            // Check all 4 directions. A win is 4 in a row.
+            return (
+                countConsecutive(c, r, player, 1, 0) + countConsecutive(c, r, player, -1, 0) >= 3 || // Horizontal
+                countConsecutive(c, r, player, 0, -1) >= 3 || // Vertical (only need to check downwards)
+                countConsecutive(c, r, player, 1, 1) + countConsecutive(c, r, player, -1, -1) >= 3 || // Diagonal /
+                countConsecutive(c, r, player, 1, -1) + countConsecutive(c, r, player, -1, 1) >= 3    // Diagonal \
+            );
+        }
+
+        function countConsecutive(c, r, player, cDelta, rDelta) {
+            let count = 0;
+            let curC = c + cDelta;
+            let curR = r + rDelta;
+            
+            while (
+                curC >= 0 && curC < COLS &&
+                curR >= 0 && curR < ROWS &&
+                state.boardData[curC] &&
+                state.boardData[curC][curR] === player
+            ) {
+                count++;
+                curC += cDelta;
+                curR += rDelta;
+            }
+            return count;
+        }
+
+        function checkDraw() {
+            // If all columns are full (length === ROWS)
+            return state.boardData.every(col => col.length === ROWS);
+        }
+
+        function handleRoundWin(winner) {
+            state.phase = 'gameOver';
+            
+            // Highlight winning tokens (optional enhancement, kept simple for robust single file)
+            
+            const titleEl = document.getElementById('round-winner-title');
+            
+            if (winner === 'draw') {
+                titleEl.innerText = "It's a Draw!";
+                titleEl.className = "text-5xl font-black mb-4 drop-shadow-lg text-white";
+            } else {
+                const wTeam = winner === 1 ? state.team1 : state.team2;
+                wTeam.score++;
+                titleEl.innerText = `${wTeam.name} Wins the Round!`;
+                titleEl.className = `text-5xl font-black mb-4 drop-shadow-lg ${winner === 1 ? 'text-red-400' : 'text-yellow-400'}`;
+                fireConfetti();
+            }
+
+            updateHeaderUI();
+            
+            // Show modal after small delay for drop animation to finish
+            setTimeout(() => {
+                elRoundModal.classList.remove('hide');
+            }, 800);
+        }
+
+        function nextRound() {
+            elRoundModal.classList.add('hide');
+            
+            if (state.currentRound >= state.totalRounds) {
+                showGameOver();
+            } else {
+                state.currentRound++;
+                state.startingPlayer = state.startingPlayer === 1 ? 2 : 1; // Swap who starts
+                initRound();
+            }
+        }
+
+        function showGameOver() {
+            elGameOverModal.classList.remove('hide');
+            
+            const t1Score = state.team1.score;
+            const t2Score = state.team2.score;
+            
+            document.getElementById('final-team1-name').innerText = state.team1.name;
+            document.getElementById('final-team1-score').innerText = t1Score;
+            document.getElementById('final-team2-name').innerText = state.team2.name;
+            document.getElementById('final-team2-score').innerText = t2Score;
+            
+            const winnerText = document.getElementById('overall-winner-text');
+            if (t1Score > t2Score) {
+                winnerText.innerText = `${state.team1.name} Wins the Match! 🏆`;
+                winnerText.className = "text-4xl font-bold mb-8 mt-4 text-red-400";
+                fireConfetti(true);
+            } else if (t2Score > t1Score) {
+                winnerText.innerText = `${state.team2.name} Wins the Match! 🏆`;
+                winnerText.className = "text-4xl font-bold mb-8 mt-4 text-yellow-400";
+                fireConfetti(true);
+            } else {
+                winnerText.innerText = "The Match is a Tie! 🤝";
+                winnerText.className = "text-4xl font-bold mb-8 mt-4 text-white";
+            }
+        }
+
+        function resetGameToSetup() {
+            elGameOverModal.classList.add('hide');
+            elGame.classList.add('hide');
+            elSetup.classList.remove('hide');
+        }
+
+        function fireConfetti(massive = false) {
+            if (typeof confetti === 'undefined') return; // Safety check
+            
+            const duration = massive ? 3000 : 1500;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: massive ? 7 : 4,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ef4444', '#eab308', '#3b82f6', '#10b981']
+                });
+                confetti({
+                    particleCount: massive ? 7 : 4,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ef4444', '#eab308', '#3b82f6', '#10b981']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+    </script>
+</body>
+</html>

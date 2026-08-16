@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Unfair Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Nunito:wght@700&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, .font-montserrat {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .btn-pop {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .btn-pop:hover {
+            transform: scale(1.05) translateY(-2px);
+        }
+        
+        .btn-pop:active {
+            transform: scale(0.95) translateY(0);
+        }
+
+        /* Confetti canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Wheel Styles */
+        .wheel-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1/1;
+            margin: 0 auto;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+        }
+
+        canvas#wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid rgba(255, 255, 255, 0.8);
+            transform-origin: center center;
+        }
+
+        .flapper {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 50px;
+            background: #ffc107;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            z-index: 10;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+
+        @keyframes flipSpin {
+            0% { transform: perspective(1000px) rotateY(0deg); }
+            100% { transform: perspective(1000px) rotateY(360deg); }
+        }
+
+        @keyframes bounce-in {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes flashBlack {
+            0%, 100% { background-color: transparent; }
+            10%, 90% { background-color: rgba(0,0,0,0.9); z-index: 50; }
+        }
+
+        @keyframes rainbowText {
+            0% { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
+            25% { color: #ffff00; text-shadow: 0 0 20px #ffff00; }
+            50% { color: #00ff00; text-shadow: 0 0 20px #00ff00; }
+            75% { color: #00ffff; text-shadow: 0 0 20px #00ffff; }
+            100% { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
+        }
+
+        @keyframes damageFlash {
+            0%, 100% { box-shadow: inset 0 0 0 transparent; filter: brightness(100%); }
+            10%, 50% { box-shadow: inset 0 0 150px rgba(220,38,38,0.8); filter: brightness(70%); background-color: rgba(69,10,10,0.5); }
+        }
+        
+        @keyframes wobbleDrop {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(5px) rotate(-3deg); }
+            50% { transform: translateY(10px) rotate(3deg); }
+            75% { transform: translateY(5px) rotate(-1deg); }
+        }
+        
+        @keyframes vortexSpin {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(0.6) rotate(180deg); filter: hue-rotate(90deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+
+        .anim-shake { animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both; box-shadow: inset 0 0 150px rgba(255,0,0,0.5); }
+        .anim-flip { animation: flipSpin 1s ease-in-out; }
+        .anim-bankrupt-screen { animation: flashBlack 3s forwards; }
+        .anim-rainbow { animation: rainbowText 0.5s linear infinite; }
+        .anim-damage { animation: damageFlash 2.5s forwards; }
+        .anim-wobble { animation: wobbleDrop 0.8s ease-in-out; }
+        .anim-vortex { animation: vortexSpin 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center relative">
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div id="setup-screen" class="w-full max-w-4xl p-8 flex flex-col items-center justify-center min-h-screen">
+        <h1 class="text-7xl font-black mb-12 text-center drop-shadow-2xl font-montserrat tracking-tight leading-tight">
+            <span class="text-white block">THE</span> 
+            <span class="text-yellow-400 block text-8xl transform -rotate-2">UNFAIR</span> 
+            <span class="text-white block">GAME</span>
+        </h1>
+        
+        <div class="glass-panel p-8 rounded-3xl w-full">
+            <div class="mb-6 flex gap-4">
+                <input type="text" id="team-name-input" placeholder="Enter Team Name..." class="flex-1 bg-white/20 border-2 border-white/30 rounded-xl px-6 py-4 text-2xl font-bold placeholder-white/60 focus:outline-none focus:border-yellow-400 transition-colors" onkeypress="if(event.key === 'Enter') addTeam()">
+                <button id="add-team-btn" onclick="addTeam()" class="bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-black px-8 py-4 rounded-xl text-xl btn-pop shadow-lg whitespace-nowrap"><i class="fa-solid fa-plus mr-2"></i> Add</button>
+            </div>
+            
+            <div id="team-list" class="flex flex-wrap gap-3 mb-8 min-h-[100px] bg-black/20 p-4 rounded-xl border border-white/10">
+                <!-- Teams will appear here -->
+                <p id="no-teams-msg" class="text-white/50 italic text-lg w-full text-center mt-6">No teams added yet.</p>
+            </div>
+
+            <button id="start-btn" onclick="startGame()" class="w-full bg-green-500 hover:bg-green-400 text-white font-black py-5 rounded-2xl text-3xl btn-pop shadow-xl opacity-50 cursor-not-allowed transition-all" disabled>START GAME</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden w-full h-full flex flex-col min-h-screen pt-4 pb-8 px-4 relative">
+        <button onclick="confirmEndGame()" class="absolute top-4 right-6 bg-red-600/80 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg btn-pop z-50 shadow-lg border border-red-400/50">
+            <i class="fa-solid fa-power-off mr-2"></i>End Game
+        </button>
+
+        <!-- Updated Game Screen Title to match the Setup Screen aesthetically but in an inline format -->
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-black my-6 text-center drop-shadow-2xl font-montserrat tracking-tight leading-tight flex flex-wrap justify-center items-center gap-3 md:gap-5">
+            <span class="text-white">THE</span> 
+            <span class="text-yellow-400 text-5xl md:text-6xl lg:text-7xl transform -rotate-2">UNFAIR</span> 
+            <span class="text-white">GAME</span>
+        </h1>
+
+        <!-- Scoreboard (Increased Size 200%) -->
+        <div id="scoreboard" class="flex flex-wrap justify-center gap-6 mb-8 w-full max-w-7xl mx-auto z-10 px-4">
+            <!-- Team scores populated dynamically -->
+        </div>
+
+        <div class="flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 w-full max-w-7xl mx-auto">
+            
+            <!-- Wheel Section -->
+            <div class="w-full lg:w-1/2 flex justify-center items-center">
+                <div class="wheel-container">
+                    <div class="flapper"></div>
+                    <canvas id="wheel" width="800" height="800"></canvas>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="w-full lg:w-1/2 flex justify-center">
+                <div id="control-panel" class="glass-panel p-8 rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden">
+                    <div id="control-content" class="text-center transition-all duration-300">
+                        <!-- Dynamic Content Goes Here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="winner-screen" class="hidden fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4">
+        <h2 class="text-6xl md:text-8xl font-black text-white mb-4 animate-bounce-in drop-shadow-[0_0_30px_rgba(255,255,255,0.5)] text-center">GAME OVER!</h2>
+        <div id="winner-announcement" class="text-center mb-12">
+            <!-- Winner info goes here -->
+        </div>
+        <button onclick="resetGame()" class="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-black py-4 px-12 rounded-full text-2xl btn-pop shadow-[0_0_40px_rgba(251,191,36,0.6)]">
+            <i class="fa-solid fa-rotate-right mr-2"></i> Play Again
+        </button>
+    </div>
+
+    <script>
+        // --- Audio System Setup ---
+        let audioInit = false;
+        const synths = {};
+
+        async function initAudio() {
+            if (audioInit) return;
+            await Tone.start();
+            
+            synths.cheer = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 1 }
+            }).toDestination();
+
+            synths.boo = new Tone.Synth({
+                oscillator: { type: "sawtooth" },
+                envelope: { attack: 0.1, decay: 0.2, sustain: 0.8, release: 2 }
+            }).toDestination();
+
+            synths.suspense = new Tone.Synth({
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.5, decay: 0, sustain: 1, release: 1 }
+            }).toDestination();
+
+            synths.jackpot = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "square" },
+                envelope: { attack: 0.05, decay: 0.1, sustain: 0.2, release: 0.5 }
+            }).toDestination();
+
+            synths.buzzer = new Tone.Synth({
+                oscillator: { type: "square" },
+                envelope: { attack: 0.01, decay: 0.1, sustain: 1, release: 0.5 }
+            }).toDestination();
+
+            synths.trombone = new Tone.Synth({
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.1, decay: 0.3, sustain: 0.8, release: 0.5 }
+            }).toDestination();
+
+            synths.tick = new Tone.MembraneSynth({
+                pitchDecay: 0.01,
+                octaves: 1,
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 }
+            }).toDestination();
+            synths.tick.volume.value = -10;
+
+            audioInit = true;
+        }
+
+        function playSound(type) {
+            if (!audioInit) return;
+            const now = Tone.now();
+            
+            switch (type) {
+                case 'cheer':
+                    synths.cheer.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+                    synths.cheer.triggerAttackRelease(["E5", "G5", "C6"], "4n", now + 0.15);
+                    break;
+                case 'boo':
+                    synths.boo.triggerAttackRelease("D2", "2n", now);
+                    synths.boo.frequency.rampTo("A1", 0.5, now);
+                    break;
+                case 'switch':
+                    synths.suspense.triggerAttackRelease("C4", "8n", now);
+                    synths.suspense.triggerAttackRelease("F#4", "8n", now + 0.2);
+                    synths.suspense.triggerAttackRelease("C4", "8n", now + 0.4);
+                    break;
+                case 'jackpot':
+                    const notes = ["C5", "E5", "G5", "B5", "C6"];
+                    notes.forEach((note, i) => {
+                        synths.jackpot.triggerAttackRelease(note, "16n", now + i * 0.1);
+                    });
+                    synths.jackpot.triggerAttackRelease(["C6", "E6", "G6"], "1n", now + 0.5);
+                    break;
+                case 'buzzer':
+                    synths.buzzer.triggerAttackRelease("C2", "8n", now);
+                    synths.buzzer.triggerAttackRelease("C2", "2n", now + 0.2);
+                    break;
+                case 'bankrupt':
+                    synths.trombone.triggerAttackRelease("G2", "4n", now);
+                    synths.trombone.triggerAttackRelease("F#2", "4n", now + 0.3);
+                    synths.trombone.triggerAttackRelease("F2", "4n", now + 0.6);
+                    synths.trombone.triggerAttackRelease("E2", "2n", now + 0.9);
+                    synths.trombone.frequency.rampTo("C2", 1, now + 0.9);
+                    break;
+                case 'tick':
+                    synths.tick.triggerAttackRelease("C4", "32n", now);
+                    break;
+                case 'winner':
+                    synths.cheer.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n", now);
+                    synths.cheer.triggerAttackRelease(["F4", "A4", "C5", "F5"], "2n", now + 0.5);
+                    synths.cheer.triggerAttackRelease(["G4", "B4", "D5", "G5"], "2n", now + 1.0);
+                    synths.cheer.triggerAttackRelease(["C5", "E5", "G5", "C6"], "1n", now + 1.5);
+                    break;
+            }
+        }
+
+        // --- State Variables ---
+        let teams = [];
+        let currentTeamIndex = 0;
+        let targetTeamIndex = 0; // For play/pass selection
+        let spinResult = null;
+        let gameState = 'waiting'; // waiting, selecting_target, spinning, result, swap_victim1, swap_victim2
+        
+        let wheelOptions = [];
+        let swapVictim1Index = -1;
+        let swapVictim2Index = -1;
+
+        // UI Elements
+        const setupScreen = document.getElementById('setup-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const teamNameInput = document.getElementById('team-name-input');
+        const teamList = document.getElementById('team-list');
+        const startBtn = document.getElementById('start-btn');
+        const scoreboard = document.getElementById('scoreboard');
+        const controlContent = document.getElementById('control-content');
+        const addTeamBtn = document.getElementById('add-team-btn');
+        
+        // Wheel setup
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        let currentAngle = 0;
+        let isSpinning = false;
+        let lastTickAngle = 0;
+
+        // Confetti setup
+        const cCanvas = document.getElementById('confetti-canvas');
+        const cCtx = cCanvas.getContext('2d');
+        let particles = [];
+        let winnerConfettiInterval = null;
+
+        function resizeConfetti() {
+            cCanvas.width = window.innerWidth;
+            cCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeConfetti);
+        resizeConfetti();
+
+        function addTeam() {
+            initAudio(); // Initialize audio context on user gesture
+            const name = teamNameInput.value.trim();
+            if (name && teams.length < 8) { // Max 8 teams for layout reasons
+                teams.push({ name: name, score: 0 });
+                teamNameInput.value = '';
+                updateSetupTeamList();
+            } else if (teams.length >= 8) {
+                // Flash button as feedback instead of alert
+                const originalText = addTeamBtn.innerHTML;
+                addTeamBtn.innerHTML = '<i class="fa-solid fa-ban mr-2"></i> Max 8';
+                addTeamBtn.classList.remove('bg-yellow-400', 'hover:bg-yellow-300');
+                addTeamBtn.classList.add('bg-red-500', 'text-white');
+                setTimeout(() => {
+                    addTeamBtn.innerHTML = originalText;
+                    addTeamBtn.classList.add('bg-yellow-400', 'hover:bg-yellow-300');
+                    addTeamBtn.classList.remove('bg-red-500', 'text-white');
+                }, 2000);
+            }
+        }
+
+        function removeTeam(index) {
+            teams.splice(index, 1);
+            updateSetupTeamList();
+        }
+
+        function updateSetupTeamList() {
+            const noTeamsMsg = document.getElementById('no-teams-msg');
+            if (teams.length === 0) {
+                teamList.innerHTML = '';
+                teamList.appendChild(noTeamsMsg);
+                noTeamsMsg.style.display = 'block';
+                startBtn.disabled = true;
+                startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            teamList.innerHTML = '';
+            teams.forEach((team, index) => {
+                const badge = document.createElement('div');
+                badge.className = 'bg-white/90 text-purple-900 font-bold px-4 py-2 rounded-full flex items-center gap-2 shadow-sm animate-bounce-in';
+                badge.innerHTML = `
+                    ${team.name}
+                    <button onclick="removeTeam(${index})" class="text-red-500 hover:text-red-700 ml-2"><i class="fa-solid fa-xmark"></i></button>
+                `;
+                teamList.appendChild(badge);
+            });
+
+            startBtn.disabled = teams.length < 2;
+            if (teams.length >= 2) {
+                startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function startGame() {
+            if (teams.length < 2) return;
+            initAudio();
+            generateWheelOptions();
+            setupScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            currentTeamIndex = 0;
+            updateScoreboard();
+            startTurn();
+            drawWheel();
+        }
+
+        function generateWheelOptions() {
+            let specials = [];
+            
+            // 1 Reset
+            specials.push({ type: 'reset', text: 'RESET', color: '#7f1d1d', icon: 'fa-bomb' }); // Dark red
+            
+            // 2 Bankrupt
+            specials.push({ type: 'bankrupt', text: 'BANKRUPT', color: '#000000', icon: 'fa-skull' });
+            specials.push({ type: 'bankrupt', text: 'BANKRUPT', color: '#000000', icon: 'fa-skull' });
+            
+            // 2 Switch
+            specials.push({ type: 'switch', text: 'SWITCH', color: '#3b82f6', icon: 'fa-right-left' }); // Blue
+            specials.push({ type: 'switch', text: 'SWITCH', color: '#3b82f6', icon: 'fa-right-left' });
+            
+            // Extra Specials
+            specials.push({ type: 'points', value: 2500, text: '+2500', color: '#10b981', isJackpot: true });
+            specials.push({ type: 'points', value: -2500, text: '-2500', color: '#b91c1c', isDevastating: true });
+            
+            specials.push({ type: 'lose_turn', text: 'LOSE TURN', color: '#6b7280', icon: 'fa-ban' }); // Gray
+            specials.push({ type: 'lose_turn', text: 'LOSE TURN', color: '#6b7280', icon: 'fa-ban' });
+            
+            let useSwap = teams.length >= 3;
+            if (useSwap) {
+                specials.push({ type: 'swap_others', text: 'SWAP 2', color: '#9333ea', icon: 'fa-users-arrows-right-left' }); // Purple
+                specials.push({ type: 'swap_others', text: 'SWAP 2', color: '#9333ea', icon: 'fa-users-arrows-right-left' });
+            }
+
+            const totalTiles = 35; 
+            const specialCount = specials.length; // 9 or 11
+            const pointsCount = totalTiles - specialCount; // 26 or 24
+            
+            // 60/40 Ratio for point tiles
+            const posCount = Math.round(pointsCount * 0.60);
+            const negCount = pointsCount - posCount;
+
+            let pointValues = [];
+            const possiblePoints = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
+            
+            for (let i = 0; i < posCount; i++) {
+                const val = possiblePoints[Math.floor(Math.random() * possiblePoints.length)];
+                pointValues.push({ type: 'points', value: val, text: `+${val}`, color: '#22c55e' });
+            }
+            for (let i = 0; i < negCount; i++) {
+                const val = -possiblePoints[Math.floor(Math.random() * possiblePoints.length)];
+                pointValues.push({ type: 'points', value: val, text: `${val}`, color: '#ef4444' });
+            }
+
+            // Shuffle point values
+            pointValues.sort(() => Math.random() - 0.5);
+            // Shuffle specials
+            specials.sort(() => Math.random() - 0.5);
+
+            wheelOptions = [];
+            let pointIndex = 0;
+            let specialIndex = 0;
+            
+            // Distribute specials evenly based on interval
+            const interval = Math.floor(totalTiles / specialCount);
+            
+            for (let i = 0; i < totalTiles; i++) {
+                if (i % interval === 0 && specialIndex < specials.length) {
+                    wheelOptions.push(specials[specialIndex]);
+                    specialIndex++;
+                } else if (pointIndex < pointValues.length) {
+                    wheelOptions.push(pointValues[pointIndex]);
+                    pointIndex++;
+                } else if (specialIndex < specials.length) {
+                    // Fallback if point array runs dry (shouldn't happen with math above)
+                    wheelOptions.push(specials[specialIndex]);
+                    specialIndex++;
+                }
+            }
+        }
+
+        function updateScoreboard() {
+            scoreboard.innerHTML = '';
+            teams.forEach((team, index) => {
+                const isActive = index === currentTeamIndex;
+                const isTarget = gameState === 'selecting_target' || (gameState === 'result' && index === targetTeamIndex);
+                
+                let highlightClass = 'border-white/10 opacity-70';
+                if (isActive) highlightClass = 'border-yellow-400 border-4 opacity-100 scale-105 shadow-[0_0_20px_rgba(251,191,36,0.5)]';
+                else if (isTarget && gameState === 'result') highlightClass = 'border-blue-400 border-4 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.5)]';
+
+                const tile = document.createElement('div');
+                // Scaled 200% essentially by doubling sizes: p-8 (was p-4), text-4xl (was 2xl), min-w-[240px] (was 120px)
+                tile.className = `glass-panel p-8 rounded-2xl flex flex-col items-center transition-all duration-300 min-w-[240px] ${highlightClass}`;
+                tile.id = `team-card-${index}`;
+                
+                tile.innerHTML = `
+                    <h3 class="text-3xl font-black mb-2 text-white/90 drop-shadow-md truncate w-full text-center">${team.name}</h3>
+                    <div class="text-6xl font-black ${team.score < 0 ? 'text-red-400' : 'text-green-400'} drop-shadow-lg score-text transition-colors duration-500">
+                        ${team.score}
+                    </div>
+                `;
+                scoreboard.appendChild(tile);
+            });
+        }
+
+        function startTurn() {
+            gameState = 'waiting';
+            updateScoreboard();
+            const team = teams[currentTeamIndex];
+            
+            controlContent.innerHTML = `
+                <div class="animate-bounce-in">
+                    <h2 class="text-3xl font-bold mb-4 text-white/80">Turn: <span class="text-yellow-400 text-5xl drop-shadow-md font-black">${team.name}</span></h2>
+                    <p class="text-xl mb-8">Did they get the question right?</p>
+                    <div class="flex gap-4">
+                        <button onclick="handleQuestionResult(true)" class="flex-1 bg-green-500 hover:bg-green-400 py-4 rounded-xl font-bold text-2xl btn-pop shadow-lg text-white">
+                            <i class="fa-solid fa-check mr-2"></i> Correct
+                        </button>
+                        <button onclick="handleQuestionResult(false)" class="flex-1 bg-red-500 hover:bg-red-400 py-4 rounded-xl font-bold text-2xl btn-pop shadow-lg text-white">
+                            <i class="fa-solid fa-xmark mr-2"></i> Incorrect
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleQuestionResult(isCorrect) {
+            if (!isCorrect) {
+                // Incorrect -> Next turn
+                playSound('boo');
+                controlContent.innerHTML = `
+                    <div class="animate-bounce-in text-red-400">
+                        <i class="fa-solid fa-xmark text-6xl mb-4"></i>
+                        <h2 class="text-4xl font-bold mb-4">Incorrect!</h2>
+                        <button onclick="nextTurn()" class="mt-4 w-full py-4 rounded-xl bg-gray-600 hover:bg-gray-500 text-white font-bold text-xl btn-pop shadow-lg">Next Team</button>
+                    </div>
+                `;
+            } else {
+                // Correct -> Play or Pass
+                playSound('cheer');
+                gameState = 'selecting_target';
+                const team = teams[currentTeamIndex];
+                
+                controlContent.innerHTML = `
+                    <div class="animate-bounce-in">
+                        <h2 class="text-4xl font-black mb-6 text-green-400 drop-shadow-md">Correct!</h2>
+                        <p class="text-xl mb-6">Does ${team.name} want to KEEP the spin or GIVE it away?</p>
+                        <div class="flex gap-4 mb-4">
+                            <button onclick="startSpin(${currentTeamIndex})" class="flex-1 bg-blue-500 hover:bg-blue-400 py-4 rounded-xl font-bold text-xl btn-pop shadow-lg text-white border border-blue-300/50">
+                                <i class="fa-solid fa-hand-holding-heart mr-2"></i> KEEP (Play)
+                            </button>
+                            <button onclick="showGiveOptions()" class="flex-1 bg-purple-500 hover:bg-purple-400 py-4 rounded-xl font-bold text-xl btn-pop shadow-lg text-white border border-purple-300/50">
+                                <i class="fa-solid fa-gift mr-2"></i> GIVE (Pass)
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function showGiveOptions() {
+            let optionsHtml = '';
+            teams.forEach((team, index) => {
+                if (index !== currentTeamIndex) {
+                    optionsHtml += `
+                        <button onclick="startSpin(${index})" class="w-full mb-3 bg-purple-600 hover:bg-purple-500 py-3 rounded-xl font-bold text-xl btn-pop shadow-md text-white">
+                            Give to ${team.name}
+                        </button>
+                    `;
+                }
+            });
+
+            controlContent.innerHTML = `
+                <div class="animate-bounce-in">
+                    <h2 class="text-2xl font-bold mb-4 text-purple-300">Select team to give the spin to:</h2>
+                    <div class="max-h-[300px] overflow-y-auto px-2 pb-2 custom-scrollbar">
+                        ${optionsHtml}
+                    </div>
+                    <button onclick="handleQuestionResult(true)" class="mt-4 w-full py-2 rounded-lg bg-gray-600 hover:bg-gray-500 font-bold text-sm btn-pop">Back</button>
+                </div>
+            `;
+        }
+
+        function drawWheel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2;
+            
+            const sliceAngle = (2 * Math.PI) / wheelOptions.length;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(currentAngle);
+            ctx.translate(-centerX, -centerY);
+
+            for (let i = 0; i < wheelOptions.length; i++) {
+                const opt = wheelOptions[i];
+                const startAngle = i * sliceAngle;
+                const endAngle = startAngle + sliceAngle;
+
+                // Draw slice
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = opt.color;
+                ctx.fill();
+                
+                // Border
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.stroke();
+
+                // Text & Icon
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+
+                // Adjust font size based on text length to prevent overlap
+                let fontSize = 34;
+                if (opt.text.length > 5) fontSize = 26;
+                if (opt.text.length > 7) fontSize = 20;
+
+                ctx.font = `900 ${fontSize}px Montserrat, sans-serif`;
+
+                if (opt.icon) {
+                    ctx.font = '900 30px "Font Awesome 6 Free"';
+                    ctx.fillText('\uf111', radius - 20, 0); // fallback placeholder logic handled by HTML, drawing raw unicode
+                    // Let's just draw text for icons instead of unicode to avoid font load issues on canvas
+                    ctx.font = `900 24px Montserrat, sans-serif`;
+                    ctx.fillText(opt.text, radius - 20, 0);
+                } else {
+                    ctx.fillText(opt.text, radius - 20, 0);
+                }
+                
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+
+        function startSpin(targetIndex) {
+            targetTeamIndex = targetIndex;
+            gameState = 'spinning';
+            updateScoreboard();
+
+            controlContent.innerHTML = `
+                <div class="animate-bounce-in">
+                    <h2 class="text-4xl font-black mb-4 animate-pulse text-yellow-400">SPINNING...</h2>
+                    <p class="text-xl">Target: ${teams[targetTeamIndex].name}</p>
+                </div>
+            `;
+
+            if (isSpinning) return;
+            isSpinning = true;
+
+            const sliceAngle = (2 * Math.PI) / wheelOptions.length;
+            const spinTime = 4000 + Math.random() * 2000;
+            const startVelocity = 0.3 + Math.random() * 0.1;
+            let currentVelocity = startVelocity;
+            let startTime = null;
+
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+
+                if (elapsed < spinTime) {
+                    const progress = elapsed / spinTime;
+                    // Ease out cubic
+                    currentVelocity = startVelocity * (1 - Math.pow(progress, 3));
+                    currentAngle += currentVelocity;
+                    
+                    // Normalize angle
+                    if(currentAngle >= 2 * Math.PI) currentAngle -= 2 * Math.PI;
+
+                    // Calculate active slice for ticking sound
+                    // The flapper is at the TOP, which in canvas arc coordinates is -PI/2 (or 3PI/2)
+                    // Angle calculation based on rotation
+                    let adjustedAngle = (Math.PI * 1.5 - currentAngle + (2 * Math.PI)) % (2 * Math.PI);
+                    let activeIndex = Math.floor(adjustedAngle / sliceAngle);
+                    
+                    if (activeIndex !== lastTickAngle) {
+                        playSound('tick');
+                        lastTickAngle = activeIndex;
+                    }
+
+                    drawWheel();
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    currentVelocity = 0;
+                    drawWheel();
+                    determineResult();
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function determineResult() {
+            const sliceAngle = (2 * Math.PI) / wheelOptions.length;
+            // Flapper is at top (270 degrees or 1.5 PI)
+            let adjustedAngle = (Math.PI * 1.5 - currentAngle + (2 * Math.PI)) % (2 * Math.PI);
+            let winningIndex = Math.floor(adjustedAngle / sliceAngle);
+            
+            spinResult = wheelOptions[winningIndex];
+            spinResult.wheelIndex = winningIndex; // Save index to remove it later
+            
+            showResult();
+        }
+
+        function showResult() {
+            gameState = 'result';
+            const target = teams[targetTeamIndex];
+            
+            let resultHtml = '';
+            let actionHtml = '';
+
+            document.body.classList.remove('anim-shake', 'anim-bankrupt-screen', 'anim-damage');
+            controlContent.classList.remove('anim-flip', 'anim-wobble', 'anim-vortex');
+
+            if (spinResult.type === 'points') {
+                const isPos = spinResult.value > 0;
+                const isMegaPos = spinResult.value >= 2500;
+                const isMegaNeg = spinResult.value <= -2500;
+                
+                const oldScore = target.score;
+                const newScore = target.score + spinResult.value;
+                
+                if (isMegaPos) {
+                    playSound('winner');
+                    resultHtml = `
+                        <h2 class="text-7xl font-black mb-2 text-green-400 drop-shadow-lg animate-bounce-in anim-rainbow">${spinResult.text}</h2>
+                        <p class="text-3xl font-bold text-yellow-300">MEGA JACKPOT! ${target.name} scores huge!</p>
+                    `;
+                    fireConfetti(true);
+                } else if (isMegaNeg) {
+                    playSound('boo');
+                    document.body.classList.add('anim-damage');
+                    resultHtml = `
+                        <div class="anim-shake">
+                            <i class="fa-solid fa-meteor text-6xl text-red-700 mb-4 drop-shadow-lg"></i>
+                            <h2 class="text-7xl font-black mb-2 text-red-600 drop-shadow-lg animate-bounce-in">${spinResult.text}</h2>
+                            <p class="text-3xl font-bold text-red-300">DEVASTATING LOSS for ${target.name}!</p>
+                        </div>
+                    `;
+                } else {
+                    playSound(isPos ? 'cheer' : 'boo');
+                    resultHtml = `
+                        <h2 class="text-6xl font-black mb-2 ${isPos ? 'text-green-400' : 'text-red-400'} drop-shadow-lg animate-bounce-in">${spinResult.text}</h2>
+                        <p class="text-2xl">${target.name} points updated.</p>
+                    `;
+                    if(isPos) fireConfetti();
+                }
+                
+                actionHtml = `<button onclick="nextTurn()" class="mt-8 w-full py-4 rounded-xl bg-gray-600 hover:bg-gray-500 font-bold text-xl btn-pop shadow-lg text-white">Next Turn</button>`;
+                
+                animateScoreChange(targetTeamIndex, oldScore, newScore);
+
+            } else if (spinResult.type === 'reset') {
+                playSound('buzzer');
+                document.body.classList.add('anim-damage');
+                resultHtml = `
+                    <div class="anim-shake">
+                        <i class="fa-solid fa-bomb text-6xl text-red-700 mb-4 drop-shadow-lg"></i>
+                        <h2 class="text-5xl font-black mb-2 text-red-600 drop-shadow-lg animate-bounce-in">TOTAL RESET</h2>
+                        <p class="text-xl font-bold text-red-300">ALL TEAMS LOSE EVERYTHING!</p>
+                    </div>
+                `;
+                actionHtml = `<button onclick="nextTurn()" class="mt-8 w-full py-4 rounded-xl bg-red-800 hover:bg-red-700 font-bold text-xl btn-pop shadow-lg text-white">Accept Fate</button>`;
+                
+                teams.forEach((t, i) => {
+                    animateScoreChange(i, t.score, 0);
+                });
+
+            } else if (spinResult.type === 'bankrupt') {
+                playSound('bankrupt');
+                document.body.classList.add('anim-bankrupt-screen');
+                resultHtml = `
+                    <div class="animate-bounce-in">
+                        <i class="fa-solid fa-skull text-6xl text-white mb-4 drop-shadow-lg"></i>
+                        <h2 class="text-6xl font-black mb-2 text-white drop-shadow-lg">BANKRUPT</h2>
+                        <p class="text-xl text-gray-300">${target.name} loses everything!</p>
+                    </div>
+                `;
+                actionHtml = `<button onclick="nextTurn()" class="mt-8 w-full py-4 rounded-xl bg-gray-800 hover:bg-gray-700 font-bold text-xl btn-pop shadow-lg text-white border border-gray-600">Next Turn</button>`;
+                
+                animateScoreChange(targetTeamIndex, target.score, 0);
+
+            } else if (spinResult.type === 'switch') {
+                playSound('switch');
+                controlContent.classList.add('anim-flip');
+                resultHtml = `
+                    <div class="animate-bounce-in">
+                        <i class="fa-solid fa-right-left text-6xl text-blue-400 mb-4 drop-shadow-lg"></i>
+                        <h2 class="text-5xl font-black mb-2 text-blue-300 drop-shadow-md">SWITCH SCORES!</h2>
+                        <p class="text-xl">${target.name} must swap scores.</p>
+                    </div>
+                `;
+                
+                if (teams.length === 2) {
+                    const otherIndex = targetTeamIndex === 0 ? 1 : 0;
+                    actionHtml = `<button onclick="executeSwitch(${otherIndex})" class="mt-8 w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xl btn-pop shadow-lg text-white">Swap with ${teams[otherIndex].name}</button>`;
+                } else {
+                    actionHtml = `<button onclick="promptSwitchSelection()" class="mt-8 w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xl btn-pop shadow-lg text-white">Choose Team to Swap</button>`;
+                }
+            
+            } else if (spinResult.type === 'lose_turn') {
+                playSound('boo');
+                controlContent.classList.add('anim-wobble');
+                resultHtml = `
+                    <div class="animate-bounce-in">
+                        <i class="fa-solid fa-ban text-6xl text-gray-400 mb-4 drop-shadow-lg"></i>
+                        <h2 class="text-5xl font-black mb-2 text-gray-300 drop-shadow-md">LOSE A TURN!</h2>
+                        <p class="text-xl">Ouch! No points are awarded.</p>
+                    </div>
+                `;
+                actionHtml = `<button onclick="nextTurn()" class="mt-8 w-full py-4 rounded-xl bg-gray-600 hover:bg-gray-500 font-bold text-xl btn-pop shadow-lg text-white">Next Turn</button>`;
+            
+            } else if (spinResult.type === 'swap_others') {
+                playSound('switch');
+                controlContent.classList.add('anim-vortex');
+                resultHtml = `
+                    <div class="animate-bounce-in">
+                        <i class="fa-solid fa-users-arrows-right-left text-6xl text-purple-400 mb-4 drop-shadow-lg"></i>
+                        <h2 class="text-5xl font-black mb-2 text-purple-300 drop-shadow-md">SWAP 2 TEAMS!</h2>
+                        <p class="text-xl">${teams[currentTeamIndex].name} chooses two other teams to swap their scores. ${teams[currentTeamIndex].name}'s points are safe!</p>
+                    </div>
+                `;
+                actionHtml = `<button onclick="promptSwapVictim1()" class="mt-8 w-full py-4 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold text-xl btn-pop shadow-lg text-white">Select Teams</button>`;
+            }
+
+            controlContent.innerHTML = resultHtml + actionHtml;
+            updateScoreboard();
+        }
+
+        function promptSwitchSelection() {
+            let optionsHtml = '';
+            teams.forEach((team, index) => {
+                if (index !== targetTeamIndex) {
+                    optionsHtml += `
+                        <button onclick="executeSwitch(${index})" class="w-full mb-3 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold text-xl btn-pop shadow-md text-white">
+                            Swap with ${team.name}
+                        </button>
+                    `;
+                }
+            });
+
+            controlContent.innerHTML = `
+                <div class="animate-bounce-in">
+                    <h2 class="text-2xl font-bold mb-4 text-blue-300">${teams[targetTeamIndex].name}, who do you want to swap with?</h2>
+                    <div class="max-h-[300px] overflow-y-auto px-2 pb-2 custom-scrollbar">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function executeSwitch(otherIndex) {
+            const targetScore = teams[targetTeamIndex].score;
+            const otherScore = teams[otherIndex].score;
+            
+            animateScoreChange(targetTeamIndex, targetScore, otherScore);
+            animateScoreChange(otherIndex, otherScore, targetScore);
+            playSound('cheer'); // Relief or joy for at least one team
+
+            controlContent.innerHTML = `
+                <div class="animate-bounce-in">
+                    <h2 class="text-4xl font-black mb-4 text-blue-400 drop-shadow-md">SWAPPED!</h2>
+                    <p class="text-xl">Scores have been exchanged.</p>
+                    <button onclick="nextTurn()" class="mt-8 w-full py-4 rounded-xl bg-gray-600 hover:bg-gray-500 font-bold text-xl btn-pop shadow-lg text-white">Next Turn</button>
+                </div>
+            `;
+        }
+
+        function promptSwapVictim1() {
+            gameState = 'swap_victim1';
+            let optionsHtml = '';
+            teams.forEach((team, index) => {
+                if (index !== currentTeamIndex) {
+                    optionsHtml += `
+                        <button onclick="promptSwapVictim2(${index})" class="w-full mb-3 bg-pink-600 hover:bg-pink-500 py-3 rounded-xl font-bold text-xl btn-pop shadow-md text-white border border-pink-400/50">
+                            Select ${team.name}
+                        </button>
+                    `;
+                }
+            });
+
+            controlContent.innerHTML = `
+                <div class="animate-bounce-in">
+                    <h2 class="text-2xl font-bold mb-4 text-pink-300">Select FIRST team to swap:</h2>
+                    <div class="max-h-[300px] overflow-y-auto px-2 pb-2 custom-scrollbar">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function promptSwapVictim2(firstIndex) {
+            gameState = 'swap_victim2';
+            swapVictim1Index = firstIndex;
+            let optionsHtml = '';
+            teams.forEach((team, index) => {
+                if (index !== currentTeamIndex && index !== firstIndex) {
+                    optionsHtml += `
+                        <button onclick="executeSwapOthers(${index})" class="w-full mb-3 bg-pink-600 hover:bg-pink-500 py-3 rounded-xl font-bold text-xl btn-pop shadow-md text-white border border-pink-400/50">
+                            Select ${team.name}
+                        </button>
+                    `;
+                }
+            });
+
+            controlContent.innerHTML = `
+                <div class="animate-bounce-in">
+                    <h2 class="text-2xl font-bold mb-4 text-pink-300">Select SECOND team to swap with ${teams[firstIndex].name}:</h2>
+                    <div class="max-h-[300px] overflow-y-auto px-2 pb-2 custom-scrollbar">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function executeSwapOthers(secondIndex) {
+            swapVictim2Index = secondIndex;
+            const score1 = teams[swapVictim1Index].score;
+            const score2 = teams[swapVictim2Index].score;
+            
+            animateScoreChange(swapVictim1Index, score1, score2);
+            animateScoreChange(swapVictim2Index, score2, score1);
+            playSound('suspense');
+
+            controlContent.innerHTML = `
+                <div class="animate-bounce-in">
+                    <h2 class="text-4xl font-black mb-4 text-purple-400 drop-shadow-md">CHAOS ACHIEVED!</h2>
+                    <p class="text-xl">${teams[swapVictim1Index].name} and ${teams[swapVictim2Index].name} have swapped scores!</p>
+                    <button onclick="nextTurn()" class="mt-8 w-full py-4 rounded-xl bg-gray-600 hover:bg-gray-500 font-bold text-xl btn-pop shadow-lg text-white">Next Turn</button>
+                </div>
+            `;
+        }
+
+        function animateScoreChange(teamIndex, oldScore, newScore) {
+            const team = teams[teamIndex];
+            team.score = newScore;
+            
+            const card = document.getElementById(`team-card-${teamIndex}`);
+            if(!card) return;
+            const scoreEl = card.querySelector('.score-text');
+            
+            let startTs = null;
+            const duration = 1000;
+
+            card.classList.add('scale-110');
+
+            function step(timestamp) {
+                if (!startTs) startTs = timestamp;
+                const progress = Math.min((timestamp - startTs) / duration, 1);
+                
+                const current = Math.floor(oldScore + (newScore - oldScore) * progress);
+                scoreEl.innerText = current;
+                
+                scoreEl.classList.remove('text-green-400', 'text-red-400', 'text-white');
+                if (current > 0) scoreEl.classList.add('text-green-400');
+                else if (current < 0) scoreEl.classList.add('text-red-400');
+                else scoreEl.classList.add('text-white');
+
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    scoreEl.innerText = newScore;
+                    setTimeout(() => card.classList.remove('scale-110'), 200);
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function nextTurn() {
+            document.body.classList.remove('anim-shake', 'anim-bankrupt-screen', 'anim-damage');
+            controlContent.classList.remove('anim-flip', 'anim-wobble', 'anim-vortex');
+
+            // Remove the winning tile from the wheel if there are enough left
+            if (spinResult && spinResult.wheelIndex !== undefined && wheelOptions.length > 2) {
+                wheelOptions.splice(spinResult.wheelIndex, 1);
+                
+                // Animate wheel redrawing
+                canvas.style.transition = 'transform 0.5s ease-in-out, filter 0.5s';
+                canvas.style.transform = 'scale(0.9)';
+                canvas.style.filter = 'blur(4px)';
+                
+                setTimeout(() => {
+                    currentAngle = 0; // Reset angle for drawing
+                    drawWheel();
+                    canvas.style.transform = 'scale(1)';
+                    canvas.style.filter = 'blur(0px)';
+                    
+                    setTimeout(() => {
+                        canvas.style.transition = '';
+                    }, 500);
+                }, 500);
+            } else if (spinResult) {
+                // If only 2 tiles left, redraw without removing to prevent breaking game
+                 drawWheel();
+            }
+
+            spinResult = null;
+            currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+            startTurn();
+        }
+
+        function confirmEndGame() {
+            // No alerts allowed per rule, building custom modal inline would be clunky here, 
+            // going straight to winner screen for seamless flow!
+            endGame();
+        }
+
+        function endGame() {
+            playSound('winner');
+            gameScreen.classList.add('hidden');
+            const winnerScreen = document.getElementById('winner-screen');
+            winnerScreen.classList.remove('hidden');
+            
+            // Find winner(s)
+            let maxScore = -Infinity;
+            let winners = [];
+            teams.forEach(t => {
+                if(t.score > maxScore) { maxScore = t.score; winners = [t]; }
+                else if(t.score === maxScore) { winners.push(t); }
+            });
+
+            const annDiv = document.getElementById('winner-announcement');
+            if (winners.length === 1) {
+                annDiv.innerHTML = `
+                    <h3 class="text-4xl text-yellow-300 font-bold mb-2">WINNER</h3>
+                    <p class="text-7xl font-black text-white drop-shadow-[0_0_20px_#10b981] mb-4">${winners[0].name}</p>
+                    <p class="text-3xl text-gray-200">Score: ${winners[0].score}</p>
+                `;
+            } else {
+                const names = winners.map(w => w.name).join(' & ');
+                annDiv.innerHTML = `
+                    <h3 class="text-4xl text-yellow-300 font-bold mb-2">IT'S A TIE!</h3>
+                    <p class="text-6xl font-black text-white drop-shadow-[0_0_20px_#10b981] mb-4">${names}</p>
+                    <p class="text-3xl text-gray-200">Score: ${maxScore}</p>
+                `;
+            }
+
+            winnerConfettiInterval = setInterval(() => fireConfetti(true), 1500);
+            fireConfetti(true);
+        }
+
+        function resetGame() {
+            if (winnerConfettiInterval) {
+                clearInterval(winnerConfettiInterval);
+                winnerConfettiInterval = null;
+            }
+            
+            particles = [];
+            cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+            
+            document.getElementById('winner-screen').classList.add('hidden');
+            setupScreen.classList.remove('hidden');
+            
+            document.body.classList.remove('anim-shake', 'anim-bankrupt-screen', 'anim-damage');
+            controlContent.classList.remove('anim-flip', 'anim-wobble', 'anim-vortex');
+
+            // Reset scores but keep teams
+            teams.forEach(t => t.score = 0);
+            updateSetupTeamList();
+        }
+
+        function fireConfetti(mega = false) {
+            const count = mega ? 300 : 100;
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff'];
+            
+            for(let i=0; i<count; i++) {
+                particles.push({
+                    x: cCanvas.width / 2,
+                    y: cCanvas.height / 2 + (mega ? 0 : 200),
+                    vx: (Math.random() - 0.5) * (mega ? 30 : 15),
+                    vy: (Math.random() - 1) * (mega ? 30 : 15) - 5,
+                    size: Math.random() * 10 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * 360,
+                    rotS: (Math.random() - 0.5) * 10
+                });
+            }
+
+            if(particles.length === count) animateConfetti();
+        }
+
+        function animateConfetti() {
+            if(particles.length === 0) {
+                cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+                return;
+            }
+            
+            cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+            
+            for(let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.5; // gravity
+                p.rot += p.rotS;
+                
+                cCtx.save();
+                cCtx.translate(p.x, p.y);
+                cCtx.rotate(p.rot * Math.PI / 180);
+                cCtx.fillStyle = p.color;
+                cCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                cCtx.restore();
+                
+                if(p.y > cCanvas.height + 100) {
+                    particles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(animateConfetti);
+        }
+
+    </script>
+</body>
+</html>

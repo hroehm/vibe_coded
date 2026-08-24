@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech+ 4.3.4: Object Instantiator</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Inter and Fira Code -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        cyber: {
+                            dark: '#0f172a',
+                            panel: '#1e293b',
+                            primary: '#06b6d4', // Cyan
+                            success: '#10b981', // Emerald
+                            warning: '#f59e0b', // Amber
+                            danger: '#ef4444',  // Red
+                        }
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slight': 'bounce 2s infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .code-text {
+            color: #38bdf8;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-cyber-primary selection:text-cyber-dark">
+
+    <header class="glass-panel sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-microchip text-2xl text-cyber-primary"></i>
+            <div>
+                <h1 class="text-xl font-bold tracking-wider uppercase text-white">CompTIA Tech+ 4.3.4</h1>
+                <p class="text-xs text-slate-400 font-mono tracking-widest">OBJECTS & CLASSES</p>
+            </div>
+        </div>
+        
+        <nav class="flex gap-2 bg-slate-800 p-1 rounded-lg">
+            <button onclick="switchTab('learn')" id="btn-learn" class="px-4 py-2 text-sm font-semibold rounded-md transition-all duration-300 bg-cyber-primary text-cyber-dark shadow-md">
+                <i class="fa-solid fa-book mr-2"></i> Briefing
+            </button>
+            <button onclick="switchTab('game')" id="btn-game" class="px-4 py-2 text-sm font-semibold rounded-md transition-all duration-300 hover:bg-slate-700 text-slate-300">
+                <i class="fa-solid fa-gamepad mr-2"></i> Lab Game
+            </button>
+            <button onclick="switchTab('quiz')" id="btn-quiz" class="px-4 py-2 text-sm font-semibold rounded-md transition-all duration-300 hover:bg-slate-700 text-slate-300">
+                <i class="fa-solid fa-list-check mr-2"></i> Quiz
+            </button>
+        </nav>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+        
+        <!-- SECTION: LEARN -->
+        <section id="sec-learn" class="fade-in space-y-6">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Modeling Real-World Objects</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">Review the key Object-Oriented Programming (OOP) concepts before proceeding to the knowledge check and lab activity. <span class="text-cyber-primary font-semibold">Click any card to expand for more details.</span></p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Class Card -->
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-l-cyber-primary cursor-pointer hover:bg-slate-800 transition-all duration-300" onclick="toggleDetails('detail-class', 'icon-class')">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xl font-bold text-cyber-primary"><i class="fa-solid fa-blueprint mr-2"></i>Class</h3>
+                        <i id="icon-class" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </div>
+                    <p class="text-slate-300 mb-2">A blueprint or template used to create objects. It defines the default properties and methods for a base version of an object.</p>
+                    <div class="bg-slate-800 p-3 rounded font-mono text-sm text-slate-400">
+                        <span class="text-pink-500">public class</span> <span class="text-yellow-300">Car</span> { ... }
+                    </div>
+                    <div id="detail-class" class="hidden mt-4 pt-4 border-t border-slate-700 text-slate-300 text-sm">
+                        <p>Classes are the primary tool used for encapsulation in OOP. By creating a Class, you establish a framework for common objects that you plan to reuse throughout your code. It serves as a master template ensuring every object built from it starts with the same base structure and capabilities.</p>
+                    </div>
+                </div>
+
+                <!-- Object Card -->
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-l-purple-500 cursor-pointer hover:bg-slate-800 transition-all duration-300" onclick="toggleDetails('detail-object', 'icon-object')">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xl font-bold text-purple-400"><i class="fa-solid fa-cube mr-2"></i>Object / Instance</h3>
+                        <i id="icon-object" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </div>
+                    <p class="text-slate-300 mb-2">An instance of a class. The most basic building block of OOP, made up of properties and methods. Requires an identity (name).</p>
+                    <div class="bg-slate-800 p-3 rounded font-mono text-sm text-slate-400">
+                        <span class="text-yellow-300">Car</span> <span class="text-blue-300">myCar</span> = <span class="text-pink-500">new</span> <span class="text-yellow-300">Car</span>();
+                    </div>
+                    <div id="detail-object" class="hidden mt-4 pt-4 border-t border-slate-700 text-slate-300 text-sm">
+                        <p>Instantiation is the process of creating a new instance, a concrete version, of a class. When you instantiate an object, you assign it an identity (a named variable) and it initializes the default properties defined in the class. Once created, you can interact with its unique state and call its methods.</p>
+                    </div>
+                </div>
+
+                <!-- Properties Card -->
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-l-cyber-warning cursor-pointer hover:bg-slate-800 transition-all duration-300" onclick="toggleDetails('detail-prop', 'icon-prop')">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xl font-bold text-cyber-warning"><i class="fa-solid fa-tags mr-2"></i>Properties (State)</h3>
+                        <i id="icon-prop" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </div>
+                    <p class="text-slate-300">A description of characteristics of an object. These are the "nouns" or "adjectives". What makes the object unique?</p>
+                    <ul class="list-disc list-inside mt-3 text-slate-400 text-sm mb-2">
+                        <li><span class="code-text">color</span> = "blue"</li>
+                        <li><span class="code-text">fuelLevel</span> = 100</li>
+                        <li><span class="code-text">type</span> = "sedan"</li>
+                    </ul>
+                    <div id="detail-prop" class="hidden mt-4 pt-4 border-t border-slate-700 text-slate-300 text-sm">
+                        <p>Properties define the <strong>State</strong> of an object. While the terms "property" and "attribute" are often used interchangeably, a property is the characteristic itself (e.g., eye color), whereas the attribute is the specific value assigned to it (e.g., 'blue').</p>
+                    </div>
+                </div>
+
+                <!-- Methods Card -->
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-l-cyber-success cursor-pointer hover:bg-slate-800 transition-all duration-300" onclick="toggleDetails('detail-method', 'icon-method')">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xl font-bold text-cyber-success"><i class="fa-solid fa-gears mr-2"></i>Methods (Behaviors)</h3>
+                        <i id="icon-method" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </div>
+                    <p class="text-slate-300">Actions, or functions, that an object can do. These are the "verbs". Often referred to as "getters" and "setters".</p>
+                    <ul class="list-disc list-inside mt-3 text-slate-400 text-sm mb-2">
+                        <li><span class="code-text">accelerate()</span></li>
+                        <li><span class="code-text">addFuel(5)</span></li>
+                        <li><span class="code-text">turnOn()</span></li>
+                    </ul>
+                    <div id="detail-method" class="hidden mt-4 pt-4 border-t border-slate-700 text-slate-300 text-sm">
+                        <p>Methods dictate the <strong>Behaviors</strong> of an object. Two common types are <em>getters</em> and <em>setters</em>. A "getter" method retrieves data or a property from the object. A "setter" method updates or modifies a property. Methods allow objects to interact with each other and process logic.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-xl cursor-pointer hover:bg-slate-800 transition-all duration-300 mt-6" onclick="toggleDetails('detail-encap', 'icon-encap')">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xl font-bold text-white"><i class="fa-solid fa-box-archive text-slate-400 mr-2"></i>Encapsulation</h3>
+                    <i id="icon-encap" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                </div>
+                <p class="text-slate-300">Bundling data (properties) and methods together to promote modularity and organization. This is the primary reason we use Classes in programming!</p>
+                <div id="detail-encap" class="hidden mt-4 pt-4 border-t border-slate-700 text-slate-300 text-sm">
+                    <p>Encapsulation is one of the fundamental principles of Object-Oriented Programming. By bundling properties and methods into a single unit (the class), you hide the internal state of the object from outside interference and misuse. Code outside the object must use the designated methods (like getters/setters) to interact with the object's data.</p>
+                </div>
+            </div>
+            
+            <div class="flex justify-center mt-8">
+                <button onclick="switchTab('game')" class="bg-cyber-primary hover:bg-cyan-400 text-slate-900 font-bold py-3 px-8 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all transform hover:scale-105">
+                    Proceed to Lab Game <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- SECTION: GAME -->
+        <section id="sec-game" class="hidden fade-in h-full">
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-bold text-white mb-2">The Lab: Blueprint Instantiator</h2>
+                <p class="text-slate-400">Map the provided terms to the correct category to complete the Class blueprint. Once complete, Instantiate the Object!</p>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl mb-6 relative border border-slate-700">
+                <!-- Top Header: Class Target -->
+                <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                    <div>
+                        <span class="text-sm font-mono text-slate-400 uppercase tracking-widest block mb-1">Target Class</span>
+                        <h3 id="game-class-name" class="text-2xl font-bold text-cyber-primary font-mono">&lt;Loading... /&gt;</h3>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-mono text-slate-400 uppercase tracking-widest block mb-1">Progress</span>
+                        <div class="flex gap-1 text-xs font-mono">
+                            <span id="game-score" class="text-cyber-success font-bold">0</span> 
+                            <span class="text-slate-500">/</span> 
+                            <span class="text-slate-400">6</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Play Area -->
+                <div id="game-play-area" class="flex flex-col items-center justify-center py-8">
+                    <p class="text-slate-400 mb-4 text-sm uppercase tracking-widest">Identify this component:</p>
+                    
+                    <!-- Term to Sort -->
+                    <div id="active-term" class="bg-slate-800 border-2 border-slate-600 text-white font-mono text-2xl py-4 px-8 rounded-lg shadow-lg mb-8 transform transition-transform text-center min-w-[250px]">
+                        --
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-4 w-full sm:w-auto">
+                        <button onclick="handleCategorize('property')" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 border-b-4 border-cyber-warning text-white font-bold py-4 px-8 rounded-xl transition-all shadow-md active:border-b-0 active:translate-y-1">
+                            <i class="fa-solid fa-tags text-cyber-warning mr-2"></i> Property (State)
+                        </button>
+                        <button onclick="handleCategorize('method')" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 border-b-4 border-cyber-success text-white font-bold py-4 px-8 rounded-xl transition-all shadow-md active:border-b-0 active:translate-y-1">
+                            <i class="fa-solid fa-gears text-cyber-success mr-2"></i> Method (Behavior)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Success Area (Hidden initially) -->
+                <div id="game-success-area" class="hidden flex flex-col items-center justify-center py-8 fade-in">
+                    <div class="w-24 h-24 bg-cyber-success rounded-full flex items-center justify-center mb-4 animate-bounce-slight shadow-[0_0_30px_rgba(16,185,129,0.5)]">
+                        <i class="fa-solid fa-check text-4xl text-cyber-dark"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Blueprint Complete!</h3>
+                    <p class="text-slate-400 mb-6 text-center max-w-md">All properties and methods have been successfully mapped for this class.</p>
+                    
+                    <button onclick="instantiateObject()" class="bg-cyber-primary hover:bg-cyan-400 text-slate-900 font-bold py-4 px-8 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all transform hover:scale-105 flex items-center text-lg">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-3"></i> Instantiate Object()
+                    </button>
+                </div>
+            </div>
+
+            <!-- Blueprint View (Results) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Properties Box -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                    <h4 class="text-cyber-warning font-bold border-b border-slate-700 pb-2 mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-tags mr-2"></i>Properties</span>
+                        <span id="prop-count" class="text-xs bg-slate-700 px-2 py-1 rounded">0/3</span>
+                    </h4>
+                    <ul id="list-properties" class="space-y-2 font-mono text-sm text-slate-300 min-h-[100px]">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+                
+                <!-- Methods Box -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                    <h4 class="text-cyber-success font-bold border-b border-slate-700 pb-2 mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-gears mr-2"></i>Methods</span>
+                        <span id="meth-count" class="text-xs bg-slate-700 px-2 py-1 rounded">0/3</span>
+                    </h4>
+                    <ul id="list-methods" class="space-y-2 font-mono text-sm text-slate-300 min-h-[100px]">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SECTION: QUIZ -->
+        <section id="sec-quiz" class="hidden fade-in max-w-3xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Concept Validation</h2>
+                <p class="text-slate-400">Putting It All Together - Answer the following questions based on the lesson notes. (Pass requirement: 90%)</p>
+            </div>
+
+            <div class="glass-panel p-8 rounded-2xl relative overflow-hidden">
+                <!-- Progress Bar -->
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-800">
+                    <div id="quiz-progress" class="h-full bg-cyber-primary transition-all duration-300 w-0"></div>
+                </div>
+
+                <div id="quiz-container" class="min-h-[250px] flex flex-col justify-center">
+                    <!-- Quiz Content generated via JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Modal for Alerts/Messages -->
+    <div id="custom-modal" class="fixed inset-0 z-[100] flex items-center justify-center hidden bg-black/60 backdrop-blur-sm transition-opacity">
+        <div class="glass-panel p-8 rounded-2xl max-w-sm w-full mx-4 transform scale-95 transition-transform" id="modal-content">
+            <div class="text-center">
+                <div id="modal-icon" class="text-5xl mb-4"></div>
+                <h3 id="modal-title" class="text-2xl font-bold text-white mb-2"></h3>
+                <p id="modal-text" class="text-slate-300 mb-6"></p>
+                <button onclick="closeModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    Acknowledge
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STRUCTURES ---
+
+        const quizQuestions = [
+            // User-provided questions
+            {
+                question: "Which of the following is always associated with objects in OOP?",
+                options: ["Arrays", "Language", "Variables", "Methods"],
+                correct: 3
+            },
+            {
+                question: "How is an object created?",
+                options: ["Define a class", "Call a constructor method of a class", "Define a variable", "Write a method"],
+                correct: 1
+            },
+            {
+                question: "What is encapsulation?",
+                options: ["A process to bundle data and methods for organization", "Defining methods", "Writing a constructor method", "Initializing an instance of an object"],
+                correct: 0
+            },
+            {
+                question: "What is a class in object-oriented programming?",
+                options: ["A single instance of data", "A function that performs a task", "A blueprint for creating objects", "A list of variables"],
+                correct: 2
+            },
+            {
+                question: "Which of the following could be an example of a property of a House object?",
+                options: ["openDoor()", "num_floors", "mowLawn()", "__init__"],
+                correct: 1
+            },
+            {
+                question: "Select two examples of methods for a House object.",
+                options: ["openDoor() and mowLawn()", "num_floors and num_rooms", "openDoor() and num_floors", "mowLawn() and num_rooms"],
+                correct: 0
+            },
+            {
+                question: "Which of the following would create a new instance of a car?",
+                options: ["Car", "new Car", "public class Car {}", "Car myCar = new Car()"],
+                correct: 3
+            },
+            {
+                question: "What would happen if we created myCar and yourCar from the Car class?",
+                options: ["We have two separate objects of the same type.", "They are the same object.", "They have the same values.", "Impossible. They cannot both exist."],
+                correct: 0
+            },
+            {
+                question: "Fill in the Blank: A property defines the ___ of an object.",
+                options: ["behaviors", "logic", "actions", "state"],
+                correct: 3
+            },
+            {
+                question: "Fill in the Blank: A method defines the ___ of an object.",
+                options: ["state", "behaviors", "class", "attributes"],
+                correct: 1
+            },
+            // Additional questions to reach 20
+            {
+                question: "What is a major benefit of using a class?",
+                options: ["It creates a blueprint to reuse code for objects of similar types.", "It forces the computer to run faster.", "It is the only way to declare a variable.", "It stops viruses from infecting the code."],
+                correct: 0
+            },
+            {
+                question: "Which of the following describes the difference between a property and a method?",
+                options: ["Properties are verbs (actions), Methods are nouns (characteristics).", "Properties describe characteristics (nouns), Methods describe behaviors (actions).", "Properties are for numbers only, Methods are for text.", "There is no difference; they are the exact same thing."],
+                correct: 1
+            },
+            {
+                question: "What does Instantiation mean in Object-Oriented Programming?",
+                options: ["Deleting a class from the file.", "Creating a new, concrete instance of a class and assigning it an identity.", "Writing comments in the code.", "Changing a property into a method."],
+                correct: 1
+            },
+            {
+                question: "What does a 'getter' method typically do?",
+                options: ["Modifies an object's property.", "Retrieves data or a property from the object.", "Deletes the object.", "Creates a new class."],
+                correct: 1
+            },
+            {
+                question: "What does a 'setter' method typically do?",
+                options: ["Modifies or updates an object's property.", "Retrieves a property from the object.", "Translates code to machine language.", "Gets user input from the keyboard."],
+                correct: 0
+            },
+            {
+                question: "How do properties and attributes differ in concept?",
+                options: ["A property is a characteristic, and an attribute is the actual value for that property.", "They are exact opposites.", "A property is a method, and an attribute is a class.", "There is no conceptual difference ever."],
+                correct: 0
+            },
+            {
+                question: "Why do we use object-oriented programming (OOP)?",
+                options: ["To model real-world objects and organize code projects.", "To make the code unreadable.", "To bypass security controls.", "Because it is the only way to write code."],
+                correct: 0
+            },
+            {
+                question: "Which of these correctly describes the relationship between a class and an object?",
+                options: ["An object is the blueprint, and a class is what you build from it.", "A class is the blueprint, and an object is a specific instance built from it.", "A class and an object are the same thing.", "A class is a method, and an object is a property."],
+                correct: 1
+            },
+            {
+                question: "What is the primary purpose of a constructor method?",
+                options: ["To initialize a new object when it is created.", "To delete properties.", "To copy the code into a new file.", "To construct the user interface."],
+                correct: 0
+            },
+            {
+                question: "What does an object require upon creation to distinguish it from others?",
+                options: ["A password.", "A compiler.", "An identity or name.", "A completely different class."],
+                correct: 2
+            }
+        ];
+
+        // Based on 4.3.4 Lab Activity mapping
+        const gameClasses = [
+            {
+                name: "Lamp",
+                properties: ["color", "brightness", "isOn"],
+                methods: ["turnOn()", "turnOff()", "changeBrightness()"]
+            },
+            {
+                name: "Computer",
+                properties: ["type", "batteryLevel", "brand"],
+                methods: ["turnOn()", "turnOff()", "charge()"]
+            },
+            {
+                name: "Playlist",
+                properties: ["genre", "songCount", "isPublic"],
+                methods: ["addSong()", "deleteSong()", "play()"]
+            },
+            {
+                name: "Car",
+                properties: ["fuelLevel", "color", "bodyStyle"],
+                methods: ["addFuel()", "accelerate()", "brake()"]
+            },
+            {
+                name: "Phone",
+                properties: ["batteryLevel", "brand", "isSmart"],
+                methods: ["makeCall()", "installApp()", "charge()"]
+            }
+        ];
+
+        // --- STATE VARIABLES ---
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+        let activeQuestions = [];
+
+        let currentGameClassIndex = 0;
+        let currentTermsPool = [];
+        let activeTermObj = null;
+        let mappedProperties = [];
+        let mappedMethods = [];
+
+
+        // --- NAVIGATION LOGIC ---
+        function switchTab(tabId) {
+            // Update buttons
+            ['learn', 'quiz', 'game'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                const sec = document.getElementById(`sec-${id}`);
+                
+                if (id === tabId) {
+                    btn.classList.add('bg-cyber-primary', 'text-cyber-dark');
+                    btn.classList.remove('hover:bg-slate-700', 'text-slate-300');
+                    sec.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('bg-cyber-primary', 'text-cyber-dark');
+                    btn.classList.add('hover:bg-slate-700', 'text-slate-300');
+                    sec.classList.add('hidden');
+                }
+            });
+
+            // Initialize specific tab logic if needed
+            if (tabId === 'quiz' && activeQuestions.length === 0) {
+                initQuiz();
+            } else if (tabId === 'game' && currentTermsPool.length === 0) {
+                initGame();
+            }
+        }
+
+        // --- ACCORDION LOGIC ---
+        function toggleDetails(detailId, iconId) {
+            const detailEl = document.getElementById(detailId);
+            const iconEl = document.getElementById(iconId);
+            
+            if (detailEl.classList.contains('hidden')) {
+                detailEl.classList.remove('hidden');
+                detailEl.classList.add('fade-in');
+                iconEl.classList.add('rotate-180');
+            } else {
+                detailEl.classList.add('hidden');
+                detailEl.classList.remove('fade-in');
+                iconEl.classList.remove('rotate-180');
+            }
+        }
+
+        // --- MODAL LOGIC ---
+        function showModal(type, title, text) {
+            const modal = document.getElementById('custom-modal');
+            const icon = document.getElementById('modal-icon');
+            const titleEl = document.getElementById('modal-title');
+            const textEl = document.getElementById('modal-text');
+            const content = document.getElementById('modal-content');
+
+            if (type === 'success') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-check text-cyber-success"></i>';
+                titleEl.className = 'text-2xl font-bold text-cyber-success mb-2';
+            } else if (type === 'error') {
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-cyber-danger"></i>';
+                titleEl.className = 'text-2xl font-bold text-cyber-danger mb-2';
+            } else {
+                icon.innerHTML = '<i class="fa-solid fa-info-circle text-cyber-primary"></i>';
+                titleEl.className = 'text-2xl font-bold text-cyber-primary mb-2';
+            }
+
+            titleEl.innerText = title;
+            textEl.innerText = text;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 150);
+        }
+
+        // --- QUIZ LOGIC ---
+        function initQuiz() {
+            // Deep copy and shuffle questions
+            activeQuestions = quizQuestions.map(q => ({
+                question: q.question,
+                options: [...q.options],
+                correctText: q.options[q.correct]
+            })).sort(() => Math.random() - 0.5);
+
+            // Shuffle options within each question
+            activeQuestions.forEach(q => {
+                q.options = q.options.sort(() => Math.random() - 0.5);
+                q.correct = q.options.indexOf(q.correctText);
+            });
+            
+            currentQuizIndex = 0;
+            quizScore = 0;
+            renderQuiz();
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            const progress = document.getElementById('quiz-progress');
+            
+            // Update progress bar
+            const percent = (currentQuizIndex / activeQuestions.length) * 100;
+            progress.style.width = `${percent}%`;
+
+            if (currentQuizIndex >= activeQuestions.length) {
+                // Show results (90% required to pass)
+                const passThreshold = Math.ceil(activeQuestions.length * 0.9);
+                const passed = quizScore >= passThreshold;
+                
+                container.innerHTML = `
+                    <div class="text-center fade-in">
+                        <i class="fa-solid ${passed ? 'fa-trophy text-cyber-warning' : 'fa-clipboard-list text-cyber-primary'} text-6xl mb-4"></i>
+                        <h3 class="text-2xl font-bold text-white mb-2">Quiz Complete</h3>
+                        <p class="text-slate-300 text-lg mb-6">Score: <span class="font-bold ${passed ? 'text-cyber-success' : 'text-cyber-danger'}">${quizScore} / ${activeQuestions.length}</span> (Requires ${passThreshold} to pass)</p>
+                        ${passed 
+                            ? `
+                                <div class="bg-slate-800 p-6 rounded-lg mb-6 border border-slate-700 max-w-sm mx-auto shadow-lg">
+                                    <h4 class="text-cyber-primary font-bold mb-3"><i class="fa-solid fa-certificate mr-2"></i>Claim Your Certificate</h4>
+                                    <input type="text" id="cert-name" placeholder="Enter your full name" class="w-full bg-slate-900 border border-slate-600 rounded px-4 py-3 text-white mb-4 focus:outline-none focus:border-cyber-primary">
+                                    <button onclick="downloadCertificate()" class="w-full bg-cyber-success hover:bg-emerald-400 text-slate-900 font-bold py-3 px-4 rounded transition-all flex items-center justify-center transform hover:scale-105">
+                                        <i class="fa-solid fa-download mr-2"></i> Download Certificate
+                                    </button>
+                                </div>
+                              `
+                            : `<button onclick="resetQuiz()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-full transition-all">Retry Quiz</button>`
+                        }
+                    </div>
+                `;
+                return;
+            }
+
+            const q = activeQuestions[currentQuizIndex];
+            
+            let optionsHtml = '';
+            q.options.forEach((opt, idx) => {
+                optionsHtml += `
+                    <button onclick="submitAnswer(${idx})" class="w-full text-left bg-slate-800 hover:bg-slate-700 border border-slate-600 p-4 rounded-lg transition-colors mb-3 flex items-start group">
+                        <span class="inline-block w-8 h-8 rounded-full bg-slate-900 text-slate-400 flex items-center justify-center font-bold mr-3 group-hover:text-cyber-primary border border-slate-700 shrink-0">${String.fromCharCode(65 + idx)}</span>
+                        <span class="text-slate-200 mt-1">${opt}</span>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = `
+                <div class="fade-in">
+                    <p class="text-cyber-primary font-mono text-sm mb-2">Question ${currentQuizIndex + 1} of ${activeQuestions.length}</p>
+                    <h3 class="text-xl font-bold text-white mb-6">${q.question}</h3>
+                    <div class="space-y-2">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function submitAnswer(selectedIndex) {
+            const correct = activeQuestions[currentQuizIndex].correct;
+            if (selectedIndex === correct) {
+                quizScore++;
+            } else {
+                showModal('error', 'Incorrect', 'Review the concepts in the Briefing tab if you need help!');
+            }
+            
+            currentQuizIndex++;
+            renderQuiz();
+        }
+
+        function resetQuiz() {
+            initQuiz();
+        }
+
+        function downloadCertificate() {
+            const nameInput = document.getElementById('cert-name');
+            if (!nameInput.value.trim()) {
+                showModal('error', 'Name Required', 'Please enter your name to generate the certificate.');
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Outer Border
+            ctx.strokeStyle = '#06b6d4'; // Cyber Primary
+            ctx.lineWidth = 10;
+            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+            
+            // Inner Border
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(35, 35, canvas.width - 70, canvas.height - 70);
+
+            // Watermark / Background Decal
+            ctx.fillStyle = 'rgba(30, 41, 59, 0.5)';
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, 200, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Text Setup
+            ctx.textAlign = 'center';
+            
+            ctx.font = 'bold 36px "Courier New", Courier, monospace';
+            ctx.fillStyle = '#06b6d4';
+            ctx.fillText('CERTIFICATE OF MASTERY', canvas.width/2, 120);
+            
+            ctx.font = '24px Arial, sans-serif';
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillText('This certifies that', canvas.width/2, 210);
+            
+            ctx.font = 'bold 48px Arial, sans-serif';
+            ctx.fillStyle = '#10b981'; // Success Green
+            ctx.fillText(nameInput.value.trim(), canvas.width/2, 280);
+            
+            ctx.font = '20px Arial, sans-serif';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('has demonstrated mastery in the Dual-Enrollment Cybersecurity I module:', canvas.width/2, 350);
+            
+            ctx.font = 'bold 28px Arial, sans-serif';
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillText('CompTIA Tech+ 4.3.4 - Objects & Classes', canvas.width/2, 410);
+
+            ctx.font = '20px "Courier New", Courier, monospace';
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillText('Final Score: ' + quizScore + ' / ' + activeQuestions.length + ' (' + Math.round((quizScore/activeQuestions.length)*100) + '%)', canvas.width/2, 470);
+            
+            const date = new Date().toLocaleDateString();
+            ctx.font = '18px Arial, sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('Awarded on: ' + date, canvas.width/2, 530);
+            
+            // Trigger Download
+            const link = document.createElement('a');
+            link.download = 'TechPlus_4.3.4_Certificate.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // --- GAME LOGIC ---
+        function initGame() {
+            // Pick a random class or follow sequence
+            const classObj = gameClasses[currentGameClassIndex];
+            document.getElementById('game-class-name').innerText = classObj.name;
+            
+            // Reset mapped arrays
+            mappedProperties = [];
+            mappedMethods = [];
+            updateGameUI();
+            
+            // Show play area, hide success area
+            document.getElementById('game-play-area').classList.remove('hidden');
+            document.getElementById('game-success-area').classList.add('hidden');
+
+            // Generate terms pool (mix props and methods)
+            currentTermsPool = [];
+            classObj.properties.forEach(p => currentTermsPool.push({ text: p, type: 'property' }));
+            classObj.methods.forEach(m => currentTermsPool.push({ text: m, type: 'method' }));
+            
+            // Shuffle pool (Fisher-Yates)
+            for (let i = currentTermsPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentTermsPool[i], currentTermsPool[j]] = [currentTermsPool[j], currentTermsPool[i]];
+            }
+
+            nextTerm();
+        }
+
+        function nextTerm() {
+            if (currentTermsPool.length === 0) {
+                // Done with blueprint
+                document.getElementById('game-play-area').classList.add('hidden');
+                document.getElementById('game-success-area').classList.remove('hidden');
+                return;
+            }
+
+            activeTermObj = currentTermsPool.pop();
+            const termElement = document.getElementById('active-term');
+            termElement.innerText = activeTermObj.text;
+            
+            // Reset animations
+            termElement.classList.remove('shake', 'border-cyber-danger', 'text-cyber-danger');
+            termElement.classList.add('border-slate-600', 'text-white');
+            
+            // Add a small intro bounce
+            termElement.classList.add('fade-in');
+            setTimeout(() => termElement.classList.remove('fade-in'), 400);
+        }
+
+        function handleCategorize(selectedType) {
+            if (!activeTermObj) return;
+
+            const termElement = document.getElementById('active-term');
+
+            if (activeTermObj.type === selectedType) {
+                // Correct
+                if (selectedType === 'property') {
+                    mappedProperties.push(activeTermObj.text);
+                } else {
+                    mappedMethods.push(activeTermObj.text);
+                }
+                
+                updateGameUI();
+                nextTerm();
+            } else {
+                // Incorrect
+                termElement.classList.remove('border-slate-600', 'text-white');
+                termElement.classList.add('border-cyber-danger', 'text-cyber-danger', 'shake');
+                
+                let explanation = selectedType === 'property' 
+                    ? `"${activeTermObj.text}" is an action (verb), so it is a Method, not a Property.`
+                    : `"${activeTermObj.text}" describes state/characteristics (noun), so it is a Property, not a Method.`;
+                
+                setTimeout(() => {
+                    showModal('error', 'Mapping Error', explanation);
+                    termElement.classList.remove('shake');
+                    // Put back in pool to try again
+                    currentTermsPool.unshift(activeTermObj); 
+                    nextTerm();
+                }, 500);
+            }
+        }
+
+        function updateGameUI() {
+            // Update counts
+            const totalMapped = mappedProperties.length + mappedMethods.length;
+            document.getElementById('game-score').innerText = totalMapped;
+            
+            document.getElementById('prop-count').innerText = `${mappedProperties.length}/3`;
+            document.getElementById('meth-count').innerText = `${mappedMethods.length}/3`;
+
+            // Update lists
+            const propList = document.getElementById('list-properties');
+            propList.innerHTML = mappedProperties.length === 0 
+                ? '<li class="text-slate-500 italic">No properties mapped yet.</li>' 
+                : mappedProperties.map(p => `<li><i class="fa-solid fa-tag text-cyber-warning mr-2 text-xs"></i>${p}</li>`).join('');
+
+            const methList = document.getElementById('list-methods');
+            methList.innerHTML = mappedMethods.length === 0 
+                ? '<li class="text-slate-500 italic">No methods mapped yet.</li>' 
+                : mappedMethods.map(m => `<li><i class="fa-solid fa-gear text-cyber-success mr-2 text-xs"></i>${m}</li>`).join('');
+        }
+
+        function instantiateObject() {
+            const classObj = gameClasses[currentGameClassIndex];
+            const objName = "my" + classObj.name;
+            
+            const codeSnippet = `
+<span class="text-pink-500">let</span> <span class="text-blue-300">${objName}</span> = <span class="text-pink-500">new</span> <span class="text-yellow-300">${classObj.name}</span>();
+<br/><br/>
+<span class="text-slate-400">// Object instantiated successfully in memory!</span>
+            `;
+
+            document.getElementById('modal-icon').innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-cyber-primary"></i>';
+            document.getElementById('modal-title').className = 'text-2xl font-bold text-cyber-primary mb-2';
+            document.getElementById('modal-title').innerText = 'Instantiation Complete';
+            document.getElementById('modal-text').innerHTML = `<div class="bg-slate-900 p-4 rounded text-left font-mono text-sm mt-4 mb-2 shadow-inner border border-slate-700">${codeSnippet}</div>`;
+            
+            document.getElementById('custom-modal').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('modal-content').classList.remove('scale-95');
+                document.getElementById('modal-content').classList.add('scale-100');
+            }, 10);
+
+            // Override close button to go to next level
+            const btn = document.querySelector('#custom-modal button');
+            btn.innerText = "Next Class Blueprint";
+            btn.onclick = () => {
+                closeModal();
+                btn.innerText = "Acknowledge";
+                btn.onclick = closeModal; // reset handler
+                
+                // Move to next class
+                currentGameClassIndex++;
+                if (currentGameClassIndex >= gameClasses.length) {
+                    currentGameClassIndex = 0; // reset
+                    
+                    document.getElementById('modal-icon').innerHTML = '<i class="fa-solid fa-trophy text-cyber-warning"></i>';
+                    document.getElementById('modal-title').className = 'text-2xl font-bold text-cyber-warning mb-2';
+                    document.getElementById('modal-title').innerText = 'Lab Complete!';
+                    document.getElementById('modal-text').innerText = 'You have successfully mapped and instantiated all objects in this lab session. Excellent work! Proceed to the final Knowledge Check.';
+                    
+                    document.getElementById('custom-modal').classList.remove('hidden');
+                    setTimeout(() => {
+                        document.getElementById('modal-content').classList.remove('scale-95');
+                        document.getElementById('modal-content').classList.add('scale-100');
+                    }, 10);
+                    
+                    // Final button proceeds to quiz
+                    const finalBtn = document.querySelector('#custom-modal button');
+                    finalBtn.innerText = "Proceed to Quiz";
+                    finalBtn.onclick = () => {
+                        closeModal();
+                        finalBtn.innerText = "Acknowledge";
+                        finalBtn.onclick = closeModal; // reset handler
+                        switchTab('quiz');
+                    };
+                } else {
+                    initGame();
+                }
+            };
+        }
+
+        // Initialize state on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup complete, default tab is Learn
+        });
+
+    </script>
+</body>
+</html>

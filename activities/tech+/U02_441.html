@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4.4.1 Programming Organization Mastery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Light green tint for cybersecurity theme */
+            color: #1f2937;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Flowchart Shapes CSS */
+        .shape-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px; width: 150px; margin: 10px; cursor: pointer; transition: transform 0.2s; position: relative;}
+        .shape-container:hover { transform: scale(1.05); }
+        .shape-container.selected { outline: 4px solid #3b82f6; outline-offset: 4px; border-radius: 8px;}
+        .shape-container.matched { opacity: 0.5; pointer-events: none; filter: grayscale(100%); }
+        
+        .shape-oval {
+            width: 120px; height: 60px; background: #93c5fd; border: 2px solid #2563eb; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .shape-rect {
+            width: 120px; height: 60px; background: #fca5a5; border: 2px solid #dc2626;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .shape-diamond {
+            width: 80px; height: 80px; background: #fde047; border: 2px solid #ca8a04;
+            transform: rotate(45deg); display: flex; align-items: center; justify-content: center;
+        }
+        .shape-diamond-text {
+            transform: rotate(-45deg); font-weight: bold;
+        }
+        .shape-parallelogram {
+            width: 110px; height: 60px; background: #c084fc; border: 2px solid #9333ea;
+            transform: skew(-20deg); display: flex; align-items: center; justify-content: center;
+        }
+        .shape-parallelogram-text {
+            transform: skew(20deg); font-weight: bold;
+        }
+
+        /* Certificate Print Styles */
+        @media print {
+            body * { visibility: hidden; }
+            #cert-section, #cert-section * { visibility: visible; }
+            #cert-section { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e5e7eb; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #059669; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+    <nav class="bg-green-700 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-shield-halved text-2xl"></i>
+                    <span class="font-bold text-xl tracking-wider">Tech+ Unit 4.4.1</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <button onclick="switchTab('learn')" class="nav-btn bg-green-900 px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition" id="nav-learn">Learn</button>
+                        <button onclick="switchTab('activity')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition" id="nav-activity">Activity</button>
+                        <button onclick="switchTab('quiz')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition" id="nav-quiz">Quiz</button>
+                        <button onclick="switchTab('cert')" class="nav-btn hidden px-3 py-2 rounded-md text-sm font-medium text-yellow-300 hover:bg-green-600 transition" id="nav-cert"><i class="fa-solid fa-award mr-1"></i>Certificate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu, show/hide based on menu state. -->
+        <div class="md:hidden flex justify-center space-x-2 py-2 bg-green-800">
+            <button onclick="switchTab('learn')" class="px-2 py-1 text-sm rounded bg-green-900">Learn</button>
+            <button onclick="switchTab('activity')" class="px-2 py-1 text-sm rounded">Activity</button>
+            <button onclick="switchTab('quiz')" class="px-2 py-1 text-sm rounded">Quiz</button>
+            <button onclick="switchTab('cert')" id="nav-cert-mobile" class="hidden px-2 py-1 text-sm text-yellow-300 rounded"><i class="fa-solid fa-award"></i></button>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- LEARN SECTION -->
+        <div id="learn-section" class="tab-content active">
+            <div class="text-center mb-10">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Programming Organization</h1>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">Mastering the planning process for software development. Learn how to think like a computer and communicate effectively with your programming team.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Planning Process -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-500">
+                    <h2 class="text-2xl font-bold mb-3 text-blue-700"><i class="fa-solid fa-list-check mr-2"></i>The Planning Process</h2>
+                    <ul class="space-y-3 text-gray-700">
+                        <li><strong>1. Problem Identification:</strong> Identify the Inputs, Processes, Storage needs, and Outputs.</li>
+                        <li><strong>2. Visualize Solution:</strong> Draw out how the problem will be solved using a <em>Flowchart</em>.</li>
+                        <li><strong>3. Turn Visuals to Words:</strong> Write out the logic using <em>Pseudocode</em>.</li>
+                        <li><strong>4. Document Work:</strong> Add comments to explain sections to other developers.</li>
+                    </ul>
+                </div>
+
+                <!-- Logic Concepts -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-purple-500">
+                    <h2 class="text-2xl font-bold mb-3 text-purple-700"><i class="fa-solid fa-code-branch mr-2"></i>Logic Concepts</h2>
+                    <p class="text-gray-700 mb-2">Controls how a program behaves.</p>
+                    <ul class="space-y-3 text-gray-700">
+                        <li><strong>Branching (If-Then-Else):</strong> Changes in program sequence based on a logical test. <em>Example: If age < 13, show G rating.</em></li>
+                        <li><strong>Looping:</strong> Repeats a block of code until a condition is met.
+                            <ul class="ml-6 mt-1 list-disc text-sm">
+                                <li><em>For Loop:</em> Runs a specific number of times (uses a counter).</li>
+                                <li><em>While Loop:</em> Runs as long as a condition remains true (e.g., waiting for valid input).</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Flowcharts -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-orange-500 md:col-span-2">
+                    <h2 class="text-2xl font-bold mb-3 text-orange-700"><i class="fa-solid fa-diagram-project mr-2"></i>Flowcharts & Pseudocode</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="font-semibold mb-2">Flowchart Symbols:</p>
+                            <ul class="space-y-2 text-gray-700">
+                                <li><span class="inline-block w-12 h-6 bg-blue-300 rounded-full border border-blue-600 text-center text-xs leading-6 mr-2">Oval</span> <strong>Start/End:</strong> Begins or terminates the flow.</li>
+                                <li><span class="inline-block w-12 h-6 bg-purple-300 border border-purple-600 transform skew-x-[-15deg] text-center text-xs leading-6 mr-2">Para</span> <strong>Input/Output:</strong> Receiving data or displaying results.</li>
+                                <li><span class="inline-block w-12 h-6 bg-red-300 border border-red-600 text-center text-xs leading-6 mr-2">Rect</span> <strong>Process:</strong> Calculations or variable assignments.</li>
+                                <li><span class="inline-block w-8 h-8 bg-yellow-300 border border-yellow-600 transform rotate-45 mr-4 translate-y-1"></span> <strong>Decision (Diamond):</strong> Logical test resulting in branching paths (Yes/No).</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <p class="font-semibold mb-2">Pseudocode:</p>
+                            <p class="text-sm text-gray-700 mb-2">"Almost code" - human-readable algorithm description.</p>
+                            <div class="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm shadow-inner">
+                                // Example: Movie Rating<br>
+                                ASK user to input age<br>
+                                IF age < 13 THEN<br>
+                                &nbsp;&nbsp;DISPLAY "G"<br>
+                                ELSE IF age < 17 THEN<br>
+                                &nbsp;&nbsp;DISPLAY "PG or PG-13"<br>
+                                ELSE<br>
+                                &nbsp;&nbsp;DISPLAY "R"<br>
+                                END IF
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Object-Oriented Methods -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-teal-500">
+                    <h2 class="text-2xl font-bold mb-3 text-teal-700"><i class="fa-solid fa-cubes mr-2"></i>Object-Oriented Methods (OOP)</h2>
+                    <p class="text-gray-700 mb-3">Structures code by abstracting everyday concepts into common object templates.</p>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Class:</strong> The template for similar objects (e.g., <em>Human</em>).</li>
+                        <li><strong>Properties:</strong> Attributes of the object (e.g., <em>Height, Age, Hair Color</em>).</li>
+                        <li><strong>Methods:</strong> Actions the object can perform (e.g., <em>Walk, Work, Play</em>).</li>
+                    </ul>
+                </div>
+
+                <!-- Documentation -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-yellow-500">
+                    <h2 class="text-2xl font-bold mb-3 text-yellow-600"><i class="fa-solid fa-comment-dots mr-2"></i>Documentation & Comments</h2>
+                    <p class="text-gray-700 mb-3">Crucial for explaining the program to other developers and yourself in the future. The computer ignores comments.</p>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>#</strong> - Used in Python, Ruby, Shell.</li>
+                        <li><strong>//</strong> - Used in Java, C++, JavaScript.</li>
+                        <li><strong>/* */</strong> - Block comments for multiple lines.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex justify-center">
+                <button onclick="switchTab('activity')" class="bg-green-600 text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-green-500 shadow-lg transition transform hover:scale-105">Ready? Try the Activity <i class="fa-solid fa-arrow-right ml-2"></i></button>
+            </div>
+        </div>
+
+        <!-- ACTIVITY SECTION -->
+        <div id="activity-section" class="tab-content">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Interactive Mastery Check</h1>
+                <p class="text-gray-600">Complete the mini-games below to test your understanding before the quiz!</p>
+            </div>
+
+            <!-- Mini-Game 1: Flowchart Matcher -->
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-200">
+                <h2 class="text-xl font-bold mb-4 text-blue-700"><i class="fa-solid fa-puzzle-piece mr-2"></i>Game 1: Flowchart Matcher</h2>
+                <p class="text-sm text-gray-600 mb-4">Click a term on the left, then click the correct shape on the right to match them.</p>
+                
+                <div class="flex flex-col md:flex-row justify-around items-center gap-6">
+                    <!-- Terms -->
+                    <div class="flex flex-col gap-3" id="term-list">
+                        <button class="term-btn px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded hover:bg-blue-50 font-semibold transition" data-match="process">Process (Calculation)</button>
+                        <button class="term-btn px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded hover:bg-blue-50 font-semibold transition" data-match="decision">Decision (Branching)</button>
+                        <button class="term-btn px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded hover:bg-blue-50 font-semibold transition" data-match="startend">Start / End</button>
+                        <button class="term-btn px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded hover:bg-blue-50 font-semibold transition" data-match="io">Input / Output</button>
+                    </div>
+                    
+                    <!-- Shapes -->
+                    <div class="flex flex-wrap md:flex-col justify-center gap-4" id="shape-list">
+                        <div class="shape-btn shape-container" data-match="startend">
+                            <div class="shape-oval">Start/End</div>
+                        </div>
+                        <div class="shape-btn shape-container" data-match="decision">
+                            <div class="shape-diamond"><span class="shape-diamond-text text-sm">Yes/No</span></div>
+                        </div>
+                        <div class="shape-btn shape-container" data-match="io">
+                            <div class="shape-parallelogram"><span class="shape-parallelogram-text">Data</span></div>
+                        </div>
+                        <div class="shape-btn shape-container" data-match="process">
+                            <div class="shape-rect">Action</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="game1-feedback" class="text-center font-bold mt-4 h-6 text-green-600"></div>
+            </div>
+
+            <!-- Mini-Game 2: OOP Sorter -->
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-200">
+                <h2 class="text-xl font-bold mb-4 text-teal-700"><i class="fa-solid fa-boxes-stacked mr-2"></i>Game 2: OOP Constructor</h2>
+                <p class="text-sm text-gray-600 mb-4">We are building an <strong>Auditorium</strong> class. Categorize the items into Properties or Methods.</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="oop-items">
+                    <div class="oop-item p-3 bg-indigo-100 text-center rounded shadow cursor-grab font-semibold border border-indigo-200" draggable="true" data-type="property">Number of Seats</div>
+                    <div class="oop-item p-3 bg-indigo-100 text-center rounded shadow cursor-grab font-semibold border border-indigo-200" draggable="true" data-type="method">Play Movie()</div>
+                    <div class="oop-item p-3 bg-indigo-100 text-center rounded shadow cursor-grab font-semibold border border-indigo-200" draggable="true" data-type="method">Adjust Volume()</div>
+                    <div class="oop-item p-3 bg-indigo-100 text-center rounded shadow cursor-grab font-semibold border border-indigo-200" draggable="true" data-type="property">Food Kiosk Active</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="border-4 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] oop-dropzone bg-gray-50" data-target="property">
+                        <h3 class="text-center font-bold text-gray-500 mb-2">Properties (Attributes)</h3>
+                    </div>
+                    <div class="border-4 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] oop-dropzone bg-gray-50" data-target="method">
+                        <h3 class="text-center font-bold text-gray-500 mb-2">Methods (Actions)</h3>
+                    </div>
+                </div>
+                <div id="game2-feedback" class="text-center font-bold mt-4 h-6 text-green-600"></div>
+            </div>
+
+            <div class="text-center">
+                <button onclick="switchTab('quiz')" class="bg-green-600 text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-green-500 shadow-lg transition transform hover:scale-105">Take the Mastery Quiz <i class="fa-solid fa-clipboard-check ml-2"></i></button>
+            </div>
+        </div>
+
+        <!-- QUIZ SECTION -->
+        <div id="quiz-section" class="tab-content">
+            <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-xl max-w-4xl mx-auto">
+                <div class="text-center mb-8 border-b pb-4">
+                    <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Unit 4.4.1 Mastery Quiz</h1>
+                    <p class="text-gray-600">Score 90% or higher (18/20) to earn your Certificate of Mastery.</p>
+                </div>
+
+                <div id="quiz-container" class="space-y-8">
+                    <!-- Questions injected via JS -->
+                </div>
+
+                <div class="mt-10 text-center border-t pt-6">
+                    <button id="submit-quiz-btn" onclick="gradeQuiz()" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-700 shadow-lg transition w-full md:w-auto">Submit Quiz</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CERTIFICATE SECTION -->
+        <div id="cert-section" class="tab-content">
+            <div class="max-w-4xl mx-auto">
+                
+                <div class="bg-white p-6 rounded shadow mb-6 no-print text-center">
+                    <h2 class="text-2xl font-bold text-green-600 mb-2">🎉 Congratulations! 🎉</h2>
+                    <p class="text-gray-700 mb-4">You have achieved mastery of Programming Organization.</p>
+                    <div class="flex flex-col md:flex-row justify-center items-center gap-4">
+                        <input type="text" id="student-name-input" placeholder="Enter your full name" class="border-2 border-gray-300 rounded px-4 py-2 w-full md:w-64 focus:border-green-500 focus:outline-none">
+                        <button onclick="updateCertName()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Update Name</button>
+                        <button onclick="window.print()" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 transition"><i class="fa-solid fa-print mr-2"></i>Print Certificate</button>
+                    </div>
+                </div>
+
+                <!-- Actual Certificate Canvas -->
+                <div class="bg-white border-[16px] border-double border-green-800 p-10 md:p-20 relative text-center min-h-[600px] flex flex-col justify-center items-center shadow-2xl print:shadow-none" id="certificate">
+                    <div class="absolute top-10 right-10 text-6xl text-yellow-500 opacity-20"><i class="fa-solid fa-award"></i></div>
+                    <div class="absolute bottom-10 left-10 text-6xl text-green-500 opacity-20"><i class="fa-solid fa-shield-halved"></i></div>
+                    
+                    <h3 class="text-2xl font-bold text-gray-500 tracking-widest uppercase mb-2">Certificate of Mastery</h3>
+                    <h1 class="text-5xl font-extrabold text-green-800 mb-6 font-serif">CompTIA Tech+ Unit 4.4.1</h1>
+                    
+                    <p class="text-xl text-gray-600 mb-8">This certifies that</p>
+                    
+                    <div class="border-b-2 border-gray-800 w-3/4 mx-auto mb-8 pb-2">
+                        <h2 id="cert-student-name" class="text-4xl font-bold text-gray-900 font-serif italic">Student Name</h2>
+                    </div>
+                    
+                    <p class="text-lg text-gray-700 mb-10 max-w-2xl">Has successfully completed the assessment for <strong>Programming Organization</strong> with a score of 90% or higher, demonstrating proficiency in the planning process, flowcharting, pseudocode, logical branching, looping, and object-oriented methodologies.</p>
+                    
+                    <div class="flex justify-between w-full max-w-2xl px-10 mt-10">
+                        <div class="text-center border-t border-gray-400 pt-2 w-48">
+                            <p class="font-bold text-gray-800 text-sm">Instructor</p>
+                        </div>
+                        <div class="text-center border-t border-gray-400 pt-2 w-48">
+                            <p class="font-bold text-gray-800 text-sm" id="cert-date">Date</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-12 text-sm text-gray-400">
+                        <i class="fa-solid fa-graduation-cap"></i> Cyber.org / TCAT Cybersecurity Program
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom Modal -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div class="text-center">
+                <div id="modal-icon" class="text-5xl mb-4"></div>
+                <h3 id="modal-title" class="text-2xl font-bold mb-2 text-gray-900"></h3>
+                <p id="modal-msg" class="text-gray-600 mb-6"></p>
+                <button onclick="closeModal()" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition w-full">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId + '-section').classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-green-900'));
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if(activeBtn && tabId !== 'cert') activeBtn.classList.add('bg-green-900');
+            
+            window.scrollTo(0,0);
+        }
+
+        // --- Custom Modal Logic (NO ALERT ALLOWED) ---
+        function showModal(title, message, type = 'info') {
+            const modal = document.getElementById('custom-modal');
+            const icon = document.getElementById('modal-icon');
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerText = message;
+            
+            if(type === 'success') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-check text-green-500"></i>';
+            } else if (type === 'error') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-500"></i>';
+            } else {
+                icon.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500"></i>';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        // --- Game 1: Flowchart Matcher Logic ---
+        let selectedTerm = null;
+        let selectedShape = null;
+        let game1Matches = 0;
+
+        document.querySelectorAll('.term-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if(this.classList.contains('matched')) return;
+                document.querySelectorAll('.term-btn').forEach(b => b.classList.remove('ring-4', 'ring-blue-300', 'bg-blue-100'));
+                this.classList.add('ring-4', 'ring-blue-300', 'bg-blue-100');
+                selectedTerm = this;
+                checkMatch1();
+            });
+        });
+
+        document.querySelectorAll('.shape-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if(this.classList.contains('matched')) return;
+                document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedShape = this;
+                checkMatch1();
+            });
+        });
+
+        function checkMatch1() {
+            if(selectedTerm && selectedShape) {
+                if(selectedTerm.dataset.match === selectedShape.dataset.match) {
+                    // Match Success
+                    selectedTerm.classList.add('matched', 'bg-green-100', 'text-green-800', 'border-green-500');
+                    selectedTerm.classList.remove('ring-4', 'ring-blue-300');
+                    selectedShape.classList.add('matched');
+                    selectedShape.classList.remove('selected');
+                    
+                    document.getElementById('game1-feedback').innerText = "Correct Match!";
+                    document.getElementById('game1-feedback').className = "text-center font-bold mt-4 h-6 text-green-600";
+                    game1Matches++;
+                    
+                    if(game1Matches === 4) {
+                        setTimeout(() => showModal('Great Job!', 'You mastered Flowchart Symbols!', 'success'), 500);
+                    }
+                } else {
+                    // Match Fail
+                    document.getElementById('game1-feedback').innerText = "Incorrect. Try again.";
+                    document.getElementById('game1-feedback').className = "text-center font-bold mt-4 h-6 text-red-600";
+                    selectedTerm.classList.remove('ring-4', 'ring-blue-300', 'bg-blue-100');
+                    selectedShape.classList.remove('selected');
+                }
+                selectedTerm = null;
+                selectedShape = null;
+            }
+        }
+
+        // --- Game 2: OOP Drag & Drop Logic ---
+        let draggedItem = null;
+        let game2Matches = 0;
+
+        document.querySelectorAll('.oop-item').forEach(item => {
+            item.addEventListener('dragstart', function() {
+                draggedItem = this;
+                setTimeout(() => this.classList.add('opacity-50'), 0);
+            });
+            item.addEventListener('dragend', function() {
+                setTimeout(() => this.classList.remove('opacity-50'), 0);
+                draggedItem = null;
+            });
+        });
+
+        document.querySelectorAll('.oop-dropzone').forEach(zone => {
+            zone.addEventListener('dragover', e => e.preventDefault());
+            zone.addEventListener('dragenter', function(e) {
+                e.preventDefault();
+                this.classList.add('bg-gray-200');
+            });
+            zone.addEventListener('dragleave', function() {
+                this.classList.remove('bg-gray-200');
+            });
+            zone.addEventListener('drop', function() {
+                this.classList.remove('bg-gray-200');
+                if(draggedItem) {
+                    if(draggedItem.dataset.type === this.dataset.target) {
+                        this.appendChild(draggedItem);
+                        draggedItem.classList.remove('bg-indigo-100', 'cursor-grab');
+                        draggedItem.classList.add('bg-green-100', 'text-green-800', 'cursor-default');
+                        draggedItem.setAttribute('draggable', 'false');
+                        
+                        document.getElementById('game2-feedback').innerText = "Correctly Categorized!";
+                        document.getElementById('game2-feedback').className = "text-center font-bold mt-4 h-6 text-green-600";
+                        game2Matches++;
+                        if(game2Matches === 4) {
+                            setTimeout(() => showModal('Awesome!', 'You know your OOP classes well!', 'success'), 500);
+                        }
+                    } else {
+                        document.getElementById('game2-feedback').innerText = "Oops! Check the category again.";
+                        document.getElementById('game2-feedback').className = "text-center font-bold mt-4 h-6 text-red-600";
+                    }
+                }
+            });
+        });
+
+        // --- Quiz Logic ---
+        const quizData = [
+            // Original 10 from Material
+            {
+                q: "Why is programming organization important?",
+                options: [
+                    "It isn't; you can skip it.",
+                    "It helps plan, visualize, and communicate the solution to others.",
+                    "It writes code in any language.",
+                    "It creates a barrier to program development on a team."
+                ], answer: 1
+            },
+            {
+                q: "How does a flowchart help in the organization of a program before writing actual code?",
+                options: [
+                    "It tests the program for errors.",
+                    "It shows the program's final output.",
+                    "It helps visualize the sequence and logic of the program.",
+                    "It determines what programming language to use."
+                ], answer: 2
+            },
+            {
+                q: "What is pseudocode, and how does it differ from actual programming languages?",
+                options: [
+                    "It uses plain language to describe steps without being runnable code.",
+                    "It is code that can be compiled and run.",
+                    "It is written in a specific programming syntax.",
+                    "It is used only for writing comments."
+                ], answer: 0
+            },
+            {
+                q: "Give an example of a situation where you would use a while loop instead of a for loop.",
+                options: [
+                    "When the loop is used to define a class",
+                    "When you want the loop to run a fixed number of times",
+                    "When the number of iterations is unknown and based on a condition",
+                    "When you want the loop to run only once"
+                ], answer: 2
+            },
+            {
+                q: "What is a key part of a for loop?",
+                options: [
+                    "A condition that the loop depends on",
+                    "A variable that counts number of repeats",
+                    "A calculation",
+                    "A comment"
+                ], answer: 1
+            },
+            {
+                q: "What role do branching statements play in a program’s logic flow?",
+                options: [
+                    "They repeat a process.",
+                    "They store user input.",
+                    "They make decisions that change the flow based on conditions.",
+                    "They initialize the program."
+                ], answer: 2
+            },
+            {
+                q: "Which of the following is a keyword in pseudocode to indicate a conditional?",
+                options: [
+                    "WHILE",
+                    "IF-THEN-ELSE",
+                    "SEQUENCE",
+                    "FOR"
+                ], answer: 1
+            },
+            {
+                q: "What is the purpose of special symbols like # and // in code?",
+                options: [
+                    "They tell the computer to do the steps in a particular order.",
+                    "They tell the computer to ignore what comes after the symbol.",
+                    "They tell the computer what the user wants.",
+                    "They tell the computer how many lines of code the program will have."
+                ], answer: 1
+            },
+            {
+                q: "Which of the following would NOT be an example of a property in a class called House?",
+                options: [
+                    "Number of bedrooms",
+                    "Color of car",
+                    "Number of floors",
+                    "Square footage"
+                ], answer: 1
+            },
+            {
+                q: "What is an organizational benefit of object-oriented programming?",
+                options: [
+                    "It eliminates the need for planning.",
+                    "It removes the need for loops and branches.",
+                    "It adds comments to code automatically.",
+                    "It creates a template for common objects."
+                ], answer: 3
+            },
+            // New 10 derived from material
+            {
+                q: "What shape is used in a flowchart to represent the start or end of a program?",
+                options: ["Oval", "Diamond", "Rectangle", "Parallelogram"],
+                answer: 0
+            },
+            {
+                q: "In a flowchart, what does a Diamond shape represent?",
+                options: ["Input / Output", "Process", "Decision (Branching)", "End of Program"],
+                answer: 2
+            },
+            {
+                q: "Which of the following correctly identifies the four parts of Problem Identification?",
+                options: [
+                    "Code, Test, Debug, Deploy",
+                    "Inputs, Processes, Storage needs, Outputs",
+                    "Variables, Strings, Integers, Booleans",
+                    "Classes, Objects, Methods, Properties"
+                ], answer: 1
+            },
+            {
+                q: "In an Object-Oriented environment, what defines the template for how similar objects will be created?",
+                options: ["A Method", "A Class", "A Branch", "A Loop"],
+                answer: 1
+            },
+            {
+                q: "If you created a class called 'Auditorium', which of the following is an example of a Method (action)?",
+                options: ["Number of Seats", "Play Movie", "Food Kiosk", "Screen Size"],
+                answer: 1
+            },
+            {
+                q: "In pseudocode, which operator is commonly used to mean 'Not Equal To'?",
+                options: ["==", "=", "!=", "++"],
+                answer: 2
+            },
+            {
+                q: "Why do we write pseudocode before writing the actual programming code?",
+                options: [
+                    "Because it is required by the compiler.",
+                    "To create a human-readable solution before worrying about specific syntax.",
+                    "To automatically generate the flowchart.",
+                    "Because pseudocode runs faster on a computer."
+                ], answer: 1
+            },
+            {
+                q: "If we need to check if a user's age is greater than or equal to 17, how would it look logically?",
+                options: ["Age < 17", "Age == 17", "Age >= 17", "Age != 17"],
+                answer: 2
+            },
+            {
+                q: "Which logical control repeats code until a specific condition is met, such as waiting for a valid user input?",
+                options: ["Branching", "For Loop", "While Loop", "Sequence"],
+                answer: 2
+            },
+            {
+                q: "In a flowchart, which shape is used to denote a Process (like a calculation or assigning a variable)?",
+                options: ["Parallelogram", "Oval", "Rectangle", "Diamond"],
+                answer: 2
+            }
+        ];
+
+        const quizContainer = document.getElementById('quiz-container');
+        
+        // Render quiz questions
+        quizData.forEach((item, index) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = "bg-gray-50 p-6 rounded-lg border border-gray-200";
+            
+            const qTitle = document.createElement('h3');
+            qTitle.className = "font-bold text-lg text-gray-800 mb-4";
+            qTitle.innerText = `${index + 1}. ${item.q}`;
+            qDiv.appendChild(qTitle);
+            
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = "space-y-3";
+            
+            item.options.forEach((opt, optIndex) => {
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-3 p-3 rounded bg-white border border-gray-300 hover:bg-green-50 cursor-pointer transition";
+                
+                const radio = document.createElement('input');
+                radio.type = "radio";
+                radio.name = `q${index}`;
+                radio.value = optIndex;
+                radio.className = "form-radio h-5 w-5 text-green-600";
+                
+                const span = document.createElement('span');
+                span.className = "text-gray-700";
+                span.innerText = opt;
+                
+                label.appendChild(radio);
+                label.appendChild(span);
+                optionsDiv.appendChild(label);
+            });
+            
+            qDiv.appendChild(optionsDiv);
+            quizContainer.appendChild(qDiv);
+        });
+
+        function gradeQuiz() {
+            let score = 0;
+            let allAnswered = true;
+            
+            for(let i = 0; i < quizData.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if(selected) {
+                    if(parseInt(selected.value) === quizData[i].answer) {
+                        score++;
+                    }
+                } else {
+                    allAnswered = false;
+                }
+            }
+            
+            if(!allAnswered) {
+                showModal('Incomplete Quiz', 'Please answer all 20 questions before submitting.', 'warning');
+                return;
+            }
+            
+            const percentage = (score / quizData.length) * 100;
+            
+            if(percentage >= 90) {
+                document.getElementById('nav-cert').classList.remove('hidden');
+                document.getElementById('nav-cert-mobile').classList.remove('hidden');
+                showModal('Outstanding!', `You scored ${score}/20 (${percentage}%). You have unlocked your Certificate of Mastery!`, 'success');
+                setTimeout(() => switchTab('cert'), 2000);
+            } else {
+                showModal('Keep Trying!', `You scored ${score}/20 (${percentage}%). You need 90% (18/20) to earn the certificate. Review the Learn tab and try again.`, 'error');
+            }
+        }
+
+        // --- Certificate Logic ---
+        function updateCertName() {
+            const name = document.getElementById('student-name-input').value.trim();
+            if(name) {
+                document.getElementById('cert-student-name').innerText = name;
+            } else {
+                showModal('Wait!', 'Please enter your name to update the certificate.', 'warning');
+            }
+        }
+
+        // Set Date
+        const today = new Date();
+        document.getElementById('cert-date').innerText = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    </script>
+</body>
+</html>

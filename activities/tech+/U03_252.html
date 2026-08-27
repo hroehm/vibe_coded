@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit 3 Section 2.5.2 Mastery</title>
+    
+    <!-- Load Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load HTML2Canvas for Certificate Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Load Fonts -->
+    <!-- Inter for UI. Playfair Display for headers. Lora for body. Qwitcher Grypen for illegible signature -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Qwitcher+Grypen:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; 
+            color: #1f2937;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Interactive Elements CSS */
+        .io-dropzone { min-height: 70px; min-width: 130px; border: 2px dashed #9ca3af; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #f9fafb; transition: all 0.2s;}
+        .io-dropzone.drag-over { background: #e5e7eb; border-color: #16a34a; box-shadow: inset 0 0 10px rgba(22, 163, 74, 0.2);}
+        
+        .io-item { cursor: grab; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .io-item:active { cursor: grabbing; transform: scale(0.95); }
+        
+        .cat-dropzone { transition: background-color 0.2s ease; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e5e7eb; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #059669; }
+
+        /* Retro Game Canvas */
+        #game-canvas {
+            background-color: #111827;
+            border: 4px solid #374151;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            max-width: 100%;
+            height: auto;
+        }
+        .game-btn { touch-action: manipulation; }
+
+        /* --- CERTIFICATE REDESIGN STYLES --- */
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-body { font-family: 'Lora', serif; }
+        /* Very messy signature font */
+        .font-script { font-family: 'Qwitcher Grypen', cursive; }
+        
+        .cert-preview-container {
+            width: 100%;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            background: #e5e7eb;
+            padding: 2rem;
+            border-radius: 0.5rem;
+        }
+
+        /* Fixed Dimensions to guarantee perfect printing/downloading */
+        #certificate {
+            width: 1056px !important;
+            height: 816px !important;
+            flex-shrink: 0;
+            background-color: #ffffff;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            /* Geometric background via SVG to ensure html2canvas compatibility. Blue changed to light tan (%23fcd34d) */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1056" height="816"><polygon points="0,0 250,0 0,650" fill="%23fcd34d"/><polygon points="0,0 350,0 0,900" fill="%23d97706" opacity="0.8"/><polygon points="0,0 120,0 0,300" fill="%23fcd34d"/><polygon points="0,450 650,816 0,816" fill="%23fcd34d"/><polygon points="0,550 450,816 0,816" fill="%23d97706" opacity="0.8"/><polygon points="800,0 1056,0 1056,256" fill="%23f3f4f6"/><polygon points="1056,500 1056,816 750,816" fill="%23f3f4f6"/></svg>');
+            background-size: cover;
+            border: 4px solid #e5e7eb;
+        }
+
+        /* Gold Foil Seal */
+        .gold-seal {
+            position: absolute;
+            left: 110px;
+            top: 350px;
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c, #fcf6ba);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 0 15px rgba(255,255,255,0.7), inset 0 0 25px rgba(139,105,20,0.9);
+            z-index: 10;
+        }
+        .gold-seal::before {
+            content: '';
+            position: absolute;
+            top: -4px; bottom: -4px; left: -4px; right: -4px;
+            border-radius: 50%;
+            border: 6px dashed #d4af37;
+        }
+        .gold-seal-inner-1 {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 2px solid rgba(139, 105, 20, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #e8c678, #dbab46);
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.2), 0 2px 5px rgba(255,255,255,0.7);
+            z-index: 1;
+        }
+        .gold-seal-inner-2 {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle, #fcf6ba, #d4af37);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            padding: 10px;
+        }
+        .embossed-text {
+            color: #b38728;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.7), -1px -1px 0px rgba(0,0,0,0.2);
+            font-family: 'Playfair Display', serif;
+            font-weight: 800;
+            line-height: 1.1;
+            text-transform: uppercase;
+        }
+        .embossed-text-large { font-size: 14px; letter-spacing: 1px; }
+        .embossed-text-small { font-size: 11px; letter-spacing: 2px; margin: 2px 0; }
+        .embossed-star { font-size: 12px; color: #b38728; text-shadow: 1px 1px 0px rgba(255,255,255,0.7), -1px -1px 0px rgba(0,0,0,0.2); margin: 2px 0; }
+
+        /* Responsive scaling trick for small screens while preserving fixed DOM size */
+        @media (max-width: 1100px) {
+            #certificate { transform: scale(0.7); transform-origin: top left; margin-bottom: -240px; margin-right: -310px; }
+        }
+        @media (max-width: 768px) {
+            #certificate { transform: scale(0.4); transform-origin: top left; margin-bottom: -490px; margin-right: -630px; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+    <nav class="bg-green-700 text-white shadow-lg sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-network-wired text-2xl"></i>
+                    <span class="font-bold text-xl tracking-wider hidden sm:inline-block">Tech+ Unit 2.5.2</span>
+                    <span class="font-bold text-xl tracking-wider sm:hidden">2.5.2</span>
+                </div>
+                <div class="hidden md:block">
+                    <!-- Adjusted Tab Order -->
+                    <div class="ml-10 flex items-baseline space-x-2">
+                        <button onclick="switchTab('briefing')" class="nav-btn bg-green-900 px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition" id="nav-briefing"><i class="fa-solid fa-book-open mr-1"></i>Briefing</button>
+                        <button onclick="switchTab('activity')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition" id="nav-activity"><i class="fa-solid fa-flask mr-1"></i>Lab Activity</button>
+                        <button onclick="switchTab('quiz')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition" id="nav-quiz"><i class="fa-solid fa-clipboard-check mr-1"></i>Quiz</button>
+                        <button onclick="switchTab('game')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-400 cursor-not-allowed transition" id="nav-game" disabled><i class="fa-solid fa-lock mr-1"></i>Game</button>
+                        <button onclick="switchTab('cert')" class="nav-btn hidden px-3 py-2 rounded-md text-sm font-medium text-yellow-300 hover:bg-green-600 transition" id="nav-cert"><i class="fa-solid fa-award mr-1"></i>Certificate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Nav -->
+        <div class="md:hidden flex flex-wrap justify-center gap-2 py-2 px-2 bg-green-800">
+            <button onclick="switchTab('briefing')" class="nav-btn-mobile px-3 py-1 text-sm rounded bg-green-900" id="nav-briefing-mobile">Briefing</button>
+            <button onclick="switchTab('activity')" class="nav-btn-mobile px-3 py-1 text-sm rounded" id="nav-activity-mobile">Lab</button>
+            <button onclick="switchTab('quiz')" class="nav-btn-mobile px-3 py-1 text-sm rounded" id="nav-quiz-mobile">Quiz</button>
+            <button onclick="switchTab('game')" class="nav-btn-mobile px-3 py-1 text-sm rounded text-gray-400 cursor-not-allowed" id="nav-game-mobile" disabled><i class="fa-solid fa-lock"></i></button>
+            <button onclick="switchTab('cert')" id="nav-cert-mobile" class="hidden px-2 py-1 text-sm text-yellow-300 rounded"><i class="fa-solid fa-award"></i></button>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- BRIEFING SECTION -->
+        <div id="briefing-section" class="tab-content active no-print">
+            <div class="text-center mb-10">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Input / Output Interfaces</h1>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">Master the physical and wireless connections that allow hardware devices to communicate. Review this briefing before moving to the Lab Activity.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- Tile 1: Networking Interfaces -->
+                <div class="bg-white rounded-xl shadow-md border-t-4 border-blue-500 overflow-hidden flex flex-col">
+                    <div class="p-6 flex-grow">
+                        <h2 class="text-2xl font-bold mb-3 text-blue-700"><i class="fa-solid fa-wifi mr-2"></i>Networking Interfaces</h2>
+                        <ul class="space-y-3 text-gray-700 mb-4">
+                            <li><strong>Ethernet (RJ-45):</strong> The standard wired connection for Local Area Networks (LANs). Uses twisted pair cables (Cat5e, Cat6). Highly reliable and fast (up to 10 Gbps).</li>
+                            <li><strong>Bluetooth:</strong> Short-range wireless tech used for Personal Area Networks (PANs). Connects peripherals like mice, keyboards, and headphones.</li>
+                            <li><strong>NFC (Near-Field Communication):</strong> Ultra short-range wireless (approx. 4 cm). Primarily used for contactless payments and quick pairing.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 border-t border-gray-100 p-4">
+                        <div class="flex gap-2">
+                            <button onclick="toggleInfo('info-net-exp')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-1"></i> Details</button>
+                            <button onclick="toggleInfo('info-net-ex')" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-lightbulb text-yellow-600 mr-1"></i> Use Case</button>
+                        </div>
+                        
+                        <div id="info-net-exp" class="hidden mt-4 p-4 bg-white rounded border border-gray-200 text-sm text-gray-700 shadow-inner">
+                            <strong>RJ-45 vs RJ-11:</strong> Do not confuse RJ-45 (Ethernet, 8 pins, wider) with RJ-11 (old landline telephones, 4 or 6 pins, narrower).
+                        </div>
+                        <div id="info-net-ex" class="hidden mt-4 p-4 bg-blue-50 rounded border border-blue-200 text-sm text-blue-900 shadow-inner">
+                            Tapping your smartphone to a credit card reader at a coffee shop uses <strong>NFC</strong>. Connecting your wireless headset to your phone uses <strong>Bluetooth</strong>.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tile 2: Networking Tools -->
+                <div class="bg-white rounded-xl shadow-md border-t-4 border-red-500 overflow-hidden flex flex-col">
+                    <div class="p-6 flex-grow">
+                        <h2 class="text-2xl font-bold mb-3 text-red-700"><i class="fa-solid fa-toolbox mr-2"></i>Networking Tools</h2>
+                        <ul class="space-y-3 text-gray-700 mb-4">
+                            <li><strong>Crimper:</strong> A physical, pliers-like tool used to attach connectors (like an RJ-45 plug) to the ends of network cables. It presses the metal pins into the wires.</li>
+                            <li><strong>Cable Tester:</strong> An electronic device used to verify the integrity of network cables. It tests for continuity, breaks, and miswirings (crossed wires).</li>
+                        </ul>
+                    </div>
+                     <div class="bg-gray-50 border-t border-gray-100 p-4">
+                        <div class="flex gap-2">
+                            <button onclick="toggleInfo('info-tool-exp')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-1"></i> Details</button>
+                            <button onclick="toggleInfo('info-tool-ex')" class="flex-1 bg-red-100 hover:bg-red-200 text-red-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-lightbulb text-yellow-600 mr-1"></i> Use Case</button>
+                        </div>
+                        
+                        <div id="info-tool-exp" class="hidden mt-4 p-4 bg-white rounded border border-gray-200 text-sm text-gray-700 shadow-inner">
+                            Without a <strong>crimper</strong>, you cannot make custom-length ethernet cables. A <strong>cable tester</strong> saves hours of troubleshooting by instantly telling you if a cable is physically broken.
+                        </div>
+                        <div id="info-tool-ex" class="hidden mt-4 p-4 bg-red-50 rounded border border-red-200 text-sm text-red-900 shadow-inner">
+                            A technician runs 100ft of Cat6 cable through a ceiling. Before plugging it into the expensive router, they use a <strong>Cable Tester</strong> on both ends to ensure none of the inner wires broke during the pull.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tile 3: Peripheral Interfaces -->
+                <div class="bg-white rounded-xl shadow-md border-t-4 border-purple-500 overflow-hidden flex flex-col">
+                    <div class="p-6 flex-grow">
+                        <h2 class="text-2xl font-bold mb-3 text-purple-700"><i class="fa-brands fa-usb mr-2"></i>Peripheral Interfaces</h2>
+                        <ul class="space-y-3 text-gray-700 mb-4">
+                            <li><strong>USB-A:</strong> The standard, rectangular port found on older PCs and laptops for mice, keyboards, and flash drives. Not reversible.</li>
+                            <li><strong>USB-B:</strong> Squarish port with beveled top corners. Almost exclusively used on peripheral devices like desktop printers.</li>
+                            <li><strong>USB-C:</strong> The modern standard. Oval-shaped and completely reversible. Supports high-speed data, high-wattage power delivery, and video output.</li>
+                            <li><strong>Lightning:</strong> Apple's proprietary reversible connector used on older iPhones and iPads (prior to the shift to USB-C).</li>
+                        </ul>
+                    </div>
+                     <div class="bg-gray-50 border-t border-gray-100 p-4">
+                        <div class="flex gap-2">
+                            <button onclick="toggleInfo('info-per-exp')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-1"></i> Details</button>
+                            <button onclick="toggleInfo('info-per-ex')" class="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-lightbulb text-yellow-600 mr-1"></i> Use Case</button>
+                        </div>
+                        
+                        <div id="info-per-exp" class="hidden mt-4 p-4 bg-white rounded border border-gray-200 text-sm text-gray-700 shadow-inner">
+                            USB (Universal Serial Bus) revolutionized computing by providing "plug-and-play" capability, eliminating the need for various obscure serial and parallel ports.
+                        </div>
+                        <div id="info-per-ex" class="hidden mt-4 p-4 bg-purple-50 rounded border border-purple-200 text-sm text-purple-900 shadow-inner">
+                            You buy a new ultra-thin laptop. It likely only has <strong>USB-C</strong> ports because they are small enough for thin designs, yet powerful enough to charge the laptop and run external displays simultaneously.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tile 4: Display Technologies -->
+                <div class="bg-white rounded-xl shadow-md border-t-4 border-orange-500 overflow-hidden flex flex-col">
+                    <div class="p-6 flex-grow">
+                        <h2 class="text-2xl font-bold mb-3 text-orange-700"><i class="fa-solid fa-desktop mr-2"></i>Display Technologies</h2>
+                        <ul class="space-y-3 text-gray-700 mb-4">
+                            <li><strong>VGA:</strong> Very old standard. 15-pin, usually blue connector. Transmits <em>analog video only</em>. No audio.</li>
+                            <li><strong>DVI:</strong> Digital Visual Interface. Replaced VGA. Usually white connector. Digital (and sometimes analog) video only.</li>
+                            <li><strong>HDMI:</strong> High-Definition Multimedia Interface. The ubiquitous standard for TVs and monitors. Carries <strong>both digital video and audio</strong> over a single cable.</li>
+                            <li><strong>DisplayPort:</strong> Primary competitor to HDMI in the PC space. Highly versatile, supports daisy-chaining multiple monitors, high refresh rates, and audio.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 border-t border-gray-100 p-4">
+                        <div class="flex gap-2">
+                            <button onclick="toggleInfo('info-disp-exp')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-1"></i> Details</button>
+                            <button onclick="toggleInfo('info-disp-ex')" class="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-lightbulb text-yellow-600 mr-1"></i> Use Case</button>
+                        </div>
+                        
+                        <div id="info-disp-exp" class="hidden mt-4 p-4 bg-white rounded border border-gray-200 text-sm text-gray-700 shadow-inner">
+                            Knowing what ports transmit audio is a common exam topic. <strong>VGA and DVI do NOT transmit audio natively. HDMI and DisplayPort DO transmit audio.</strong>
+                        </div>
+                        <div id="info-disp-ex" class="hidden mt-4 p-4 bg-orange-50 rounded border border-orange-200 text-sm text-orange-900 shadow-inner">
+                            Setting up a home theater PC to connect to a television? You will absolutely use an <strong>HDMI</strong> cable to easily send both the 4K picture and the surround sound to the TV with one cord.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex justify-center">
+                <button onclick="switchTab('activity')" class="bg-green-600 text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-green-500 shadow-lg transition transform hover:scale-105">Proceed to Lab Activity <i class="fa-solid fa-arrow-right ml-2"></i></button>
+            </div>
+        </div>
+
+        <!-- LAB ACTIVITY SECTION -->
+        <div id="activity-section" class="tab-content no-print">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Interactive Lab Activity</h1>
+                <p class="text-gray-600">Test your hands-on hardware knowledge with these lab exercises.</p>
+            </div>
+
+            <!-- Lab 1: Interface Categorization -->
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-200">
+                <h2 class="text-xl font-bold mb-4 text-blue-700"><i class="fa-solid fa-layer-group mr-2"></i>Lab 1: Protocol Categorization</h2>
+                <p class="text-sm text-gray-600 mb-4">Drag and drop the interface technologies into their correct primary use-case category.</p>
+                
+                <div class="flex flex-wrap gap-3 mb-6" id="cat-items">
+                    <div class="io-item px-4 py-2 bg-indigo-100 border border-indigo-300 rounded font-bold" draggable="true" data-type="network">RJ-45</div>
+                    <div class="io-item px-4 py-2 bg-indigo-100 border border-indigo-300 rounded font-bold" draggable="true" data-type="video">HDMI</div>
+                    <div class="io-item px-4 py-2 bg-indigo-100 border border-indigo-300 rounded font-bold" draggable="true" data-type="peripheral">USB-A</div>
+                    <div class="io-item px-4 py-2 bg-indigo-100 border border-indigo-300 rounded font-bold" draggable="true" data-type="video">VGA</div>
+                    <div class="io-item px-4 py-2 bg-indigo-100 border border-indigo-300 rounded font-bold" draggable="true" data-type="network">NFC</div>
+                    <div class="io-item px-4 py-2 bg-indigo-100 border border-indigo-300 rounded font-bold" draggable="true" data-type="peripheral">Lightning</div>
+                    <div class="io-item px-4 py-2 bg-indigo-100 border border-indigo-300 rounded font-bold" draggable="true" data-type="video">DisplayPort</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="cat-dropzone border-2 border-dashed border-blue-400 bg-blue-50 rounded-lg p-4 min-h-[150px] flex flex-col items-center" data-target="network">
+                        <h3 class="font-bold text-blue-800 mb-2 border-b border-blue-200 w-full text-center pb-1"><i class="fa-solid fa-wifi mr-1"></i>Networking</h3>
+                    </div>
+                    <div class="cat-dropzone border-2 border-dashed border-purple-400 bg-purple-50 rounded-lg p-4 min-h-[150px] flex flex-col items-center" data-target="peripheral">
+                        <h3 class="font-bold text-purple-800 mb-2 border-b border-purple-200 w-full text-center pb-1"><i class="fa-brands fa-usb mr-1"></i>Peripherals</h3>
+                    </div>
+                    <div class="cat-dropzone border-2 border-dashed border-orange-400 bg-orange-50 rounded-lg p-4 min-h-[150px] flex flex-col items-center" data-target="video">
+                        <h3 class="font-bold text-orange-800 mb-2 border-b border-orange-200 w-full text-center pb-1"><i class="fa-solid fa-desktop mr-1"></i>Video / Display</h3>
+                    </div>
+                </div>
+                <div id="lab1-feedback" class="text-center font-bold mt-4 h-6 text-green-600"></div>
+            </div>
+
+            <!-- Lab 2: Tool Scenario Matcher -->
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-200">
+                <h2 class="text-xl font-bold mb-4 text-red-700"><i class="fa-solid fa-wrench mr-2"></i>Lab 2: Scenario Tool Matcher</h2>
+                <p class="text-sm text-gray-600 mb-4">Click the scenario on the left, then click the correct tool/interface required to solve it.</p>
+                
+                <div class="flex flex-col md:flex-row justify-around items-stretch gap-6">
+                    <div class="flex flex-col gap-3 flex-1">
+                        <button class="scenario-btn px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded text-left hover:bg-red-50 text-sm font-semibold transition" data-match="crimper">"I need to attach an RJ-45 plug to this bare Cat6 wire."</button>
+                        <button class="scenario-btn px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded text-left hover:bg-red-50 text-sm font-semibold transition" data-match="tester">"My network drop in the office is dead. I need to see if the wire is cut in the ceiling."</button>
+                        <button class="scenario-btn px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded text-left hover:bg-red-50 text-sm font-semibold transition" data-match="nfc">"I want to tap my phone to the register to pay for groceries."</button>
+                        <button class="scenario-btn px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded text-left hover:bg-red-50 text-sm font-semibold transition" data-match="hdmi">"I need to run 4K video AND surround sound audio to my TV."</button>
+                    </div>
+                    
+                    <div class="flex flex-col gap-3 flex-1 justify-center">
+                        <button class="tool-btn px-4 py-3 bg-white border-2 border-gray-300 rounded text-center hover:bg-gray-100 font-bold text-gray-700 shadow-sm transition" data-match="hdmi"><i class="fa-solid fa-plug text-orange-500 mr-2"></i>HDMI Cable</button>
+                        <button class="tool-btn px-4 py-3 bg-white border-2 border-gray-300 rounded text-center hover:bg-gray-100 font-bold text-gray-700 shadow-sm transition" data-match="crimper"><i class="fa-solid fa-ruler-combined text-blue-500 mr-2"></i>Crimper</button>
+                        <button class="tool-btn px-4 py-3 bg-white border-2 border-gray-300 rounded text-center hover:bg-gray-100 font-bold text-gray-700 shadow-sm transition" data-match="nfc"><i class="fa-solid fa-mobile-screen-button text-purple-500 mr-2"></i>NFC</button>
+                        <button class="tool-btn px-4 py-3 bg-white border-2 border-gray-300 rounded text-center hover:bg-gray-100 font-bold text-gray-700 shadow-sm transition" data-match="tester"><i class="fa-solid fa-walkie-talkie text-green-500 mr-2"></i>Cable Tester</button>
+                    </div>
+                </div>
+                <div id="lab2-feedback" class="text-center font-bold mt-4 h-6 text-green-600"></div>
+            </div>
+
+            <div class="text-center">
+                <button onclick="switchTab('quiz')" class="bg-green-600 text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-green-500 shadow-lg transition transform hover:scale-105">Take the Mastery Quiz <i class="fa-solid fa-clipboard-check ml-2"></i></button>
+            </div>
+        </div>
+
+        <!-- QUIZ SECTION -->
+        <div id="quiz-section" class="tab-content no-print">
+            <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-xl max-w-4xl mx-auto">
+                <div class="text-center mb-8 border-b pb-4">
+                    <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Unit 2.5.2 Mastery Quiz</h1>
+                    <p class="text-gray-600">Score 90% or higher (18/20) to earn your Certificate of Mastery and unlock the Retro Game!</p>
+                </div>
+
+                <div id="quiz-container" class="space-y-8">
+                    <!-- Questions injected via JS -->
+                </div>
+
+                <div class="mt-10 text-center border-t pt-6 flex flex-col md:flex-row justify-center items-center gap-4">
+                    <button id="submit-quiz-btn" onclick="gradeQuiz()" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-700 shadow-lg transition w-full md:w-auto">Submit Quiz</button>
+                    <button id="proceed-game-btn" onclick="switchTab('game')" class="hidden bg-purple-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-purple-700 shadow-lg transition w-full md:w-auto">Play Retro Game <i class="fa-solid fa-gamepad ml-2"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RETRO GAME SECTION -->
+        <div id="game-section" class="tab-content no-print">
+            <div class="bg-gray-900 p-6 sm:p-8 rounded-2xl shadow-xl max-w-4xl mx-auto border-4 border-gray-700">
+                <div class="text-center mb-4">
+                    <h1 class="text-3xl font-extrabold text-green-400 mb-2 tracking-widest uppercase" style="font-family: monospace;">Retro Cable Connector</h1>
+                    <p class="text-gray-300 text-sm">You are the Network Cable. Use arrow keys to connect to valid ports (blue/yellow squares) to increase your length and score. Avoid hitting the walls or yourself!</p>
+                </div>
+                
+                <div class="flex justify-between items-center mb-2 px-4 text-white font-mono text-xl">
+                    <div>Score: <span id="game-score" class="text-green-400 font-bold">0</span></div>
+                    <div>High Score: <span id="game-highscore" class="text-yellow-400 font-bold">0</span></div>
+                </div>
+
+                <div class="relative flex justify-center w-full">
+                    <!-- Game Canvas -->
+                    <canvas id="game-canvas" width="400" height="400" class="w-full max-w-[400px] sm:max-w-[500px]"></canvas>
+                    
+                    <!-- Overlay Start Button -->
+                    <div id="game-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 rounded-lg max-w-[400px] sm:max-w-[500px] mx-auto">
+                        <button id="start-game-btn" class="bg-green-500 hover:bg-green-400 text-black font-bold font-mono py-3 px-6 rounded-lg text-xl border-4 border-green-700 uppercase transform transition hover:scale-105">Insert Coin (Start)</button>
+                    </div>
+                </div>
+
+                <!-- Mobile Controls -->
+                <div class="grid grid-cols-3 gap-2 w-48 mx-auto mt-6 sm:hidden">
+                    <div></div>
+                    <button class="game-btn bg-gray-700 text-white rounded p-4 active:bg-gray-500" onclick="setDirection(0, -1)"><i class="fa-solid fa-arrow-up"></i></button>
+                    <div></div>
+                    <button class="game-btn bg-gray-700 text-white rounded p-4 active:bg-gray-500" onclick="setDirection(-1, 0)"><i class="fa-solid fa-arrow-left"></i></button>
+                    <button class="game-btn bg-gray-700 text-white rounded p-4 active:bg-gray-500" onclick="setDirection(0, 1)"><i class="fa-solid fa-arrow-down"></i></button>
+                    <button class="game-btn bg-gray-700 text-white rounded p-4 active:bg-gray-500" onclick="setDirection(1, 0)"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+
+                <div class="mt-8 text-center border-t border-gray-700 pt-6">
+                    <button onclick="switchTab('cert')" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-700 shadow-lg transition w-full md:w-auto">View Certificate <i class="fa-solid fa-award ml-2"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CERTIFICATE SECTION -->
+        <div id="cert-section" class="tab-content">
+            <div class="max-w-5xl mx-auto">
+                
+                <!-- Controls (No Print) -->
+                <div class="bg-white p-6 rounded shadow mb-6 no-print text-center border border-gray-200">
+                    <h2 class="text-2xl font-bold text-green-600 mb-2">🎉 Congratulations! 🎉</h2>
+                    <p class="text-gray-700 mb-4">You have achieved mastery of Input / Output Interfaces.</p>
+                    <div class="flex flex-col md:flex-row justify-center items-center gap-4">
+                        <input type="text" id="student-name-input" value="Jim" placeholder="Enter your first name" class="border-2 border-gray-300 rounded px-4 py-2 w-full md:w-64 focus:border-green-500 focus:outline-none">
+                        <button onclick="updateCertName()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Update Name</button>
+                        <button id="download-btn" onclick="downloadCert()" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 transition flex items-center justify-center">
+                            <i class="fa-solid fa-download mr-2"></i>Download PNG
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Certificate Render Container -->
+                <div class="cert-preview-container print:p-0 print:bg-white">
+                    
+                    <!-- Actual Certificate Canvas -->
+                    <div id="certificate">
+                        
+                        <!-- Gold Realistic Seal -->
+                        <div class="gold-seal">
+                            <div class="gold-seal-inner-1">
+                                <div class="gold-seal-inner-2">
+                                     <span class="embossed-text embossed-text-large">Certificate</span>
+                                     <i class="fa-solid fa-star embossed-star"></i>
+                                     <span class="embossed-text embossed-text-small">Of</span>
+                                     <i class="fa-solid fa-star embossed-star"></i>
+                                     <span class="embossed-text embossed-text-large">Excellence</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content Area (Pushed down 1/2 inch (48px) and right to clear geometry) -->
+                        <div class="relative z-20 w-full h-full flex flex-col pt-[48px] pl-[380px] pr-[48px]">
+                            
+                            <!-- Headers -->
+                            <h1 class="text-[#1e3a8a] text-[4.5rem] leading-none font-serif font-bold tracking-wide uppercase mb-2">CERTIFICATE</h1>
+                            <h2 class="text-gray-800 text-3xl font-serif tracking-widest uppercase mb-10">Of Achievement</h2>
+                            
+                            <!-- Introductory Text -->
+                            <p class="text-[1.4rem] font-body text-gray-800 mb-4">This is to certify that</p>
+                            
+                            <!-- Dynamic Student Name with specific underline style -->
+                            <div class="relative mb-8 w-full">
+                                <!-- Name text centered -->
+                                <h3 id="cert-student-name" class="text-[4rem] text-[#1e3a8a] font-serif italic leading-none pb-2 relative z-10 text-center w-full block">Jim</h3>
+                                <!-- Lines -->
+                                <div class="w-full border-b-[2px] border-[#1e3a8a] absolute bottom-[4px] left-0 z-0"></div>
+                                <div class="w-full border-b-[2px] border-dotted border-red-500 absolute bottom-[0px] left-0 z-0"></div>
+                            </div>
+                            
+                            <!-- Body Text -->
+                            <p class="text-[1.3rem] font-body text-gray-800 leading-relaxed w-full pr-4">
+                                Has successfully completed the assessment for 
+                                <strong class="text-[1.8rem] text-[#1e3a8a] block mt-4 mb-2 font-serif">Cyber.org Tech+ Unit 3 Section 2.5.2</strong>
+                                <strong class="text-[1.5rem] text-black block mb-4 font-serif italic">Input and Output Interfaces</strong>
+                                <span class="text-[1.1rem] text-gray-700 leading-snug block">Demonstrating proficiency in understanding networking interfaces, identifying input and output devices, mastering peripheral connectors and cables, and explaining display technologies and port functions with distinction.</span>
+                            </p>
+                            
+                            <!-- Signatures & Footer (Shifted to the right to avoid bottom left polygon) -->
+                            <div class="flex justify-end gap-16 items-end mt-auto mb-[60px] w-full pr-8">
+                                <!-- Instructor Signature Line -->
+                                <div class="w-64">
+                                    <div class="border-b border-gray-600 mb-2 h-20 flex items-end justify-center relative">
+                                        <!-- Scribbled illegible signature using Qwitcher Grypen -->
+                                        <span class="font-script text-[5rem] text-[#1e3a8a] absolute bottom-[-10px] transform -rotate-3 opacity-90">Dr. M. S</span>
+                                    </div>
+                                    <p class="font-serif text-xl text-gray-800 text-center">Administration</p>
+                                </div>
+                                
+                                <!-- Date Line -->
+                                <div class="w-64">
+                                    <div class="border-b border-gray-600 mb-2 text-center h-20 flex items-end justify-center">
+                                        <p id="cert-date" class="font-body text-2xl text-gray-800 pb-1">Date Here</p>
+                                    </div>
+                                    <p class="font-serif text-xl text-gray-800 text-center">Date</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Modal -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div class="text-center">
+                <div id="modal-icon" class="text-5xl mb-4"></div>
+                <h3 id="modal-title" class="text-2xl font-bold mb-2 text-gray-900"></h3>
+                <p id="modal-msg" class="text-gray-600 mb-6"></p>
+                <button onclick="closeModal()" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition w-full">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId + '-section').classList.add('active');
+            
+            // Desktop Nav
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-green-900'));
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if(activeBtn && tabId !== 'cert') activeBtn.classList.add('bg-green-900');
+            
+            // Mobile Nav
+            document.querySelectorAll('.nav-btn-mobile').forEach(btn => btn.classList.remove('bg-green-900'));
+            const activeMobileBtn = document.getElementById('nav-' + tabId + '-mobile');
+            if(activeMobileBtn && tabId !== 'cert') activeMobileBtn.classList.add('bg-green-900');
+
+            window.scrollTo(0,0);
+
+            // Start game logic if tab is clicked
+            if (tabId === 'game' && !gameLoop) {
+                resetGame();
+                drawGame();
+            }
+        }
+
+        function toggleInfo(id) {
+            const el = document.getElementById(id);
+            if(el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
+        // --- Custom Modal Logic ---
+        function showModal(title, message, type = 'info') {
+            const modal = document.getElementById('custom-modal');
+            const icon = document.getElementById('modal-icon');
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerText = message;
+            
+            if(type === 'success') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-check text-green-500"></i>';
+            } else if (type === 'error') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-500"></i>';
+            } else if (type === 'warning') {
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-yellow-500"></i>';
+            } else {
+                icon.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500"></i>';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        // --- Lab 1: Categorization Logic ---
+        let draggedCatItem = null;
+
+        document.querySelectorAll('.io-item').forEach(item => {
+            item.addEventListener('dragstart', function() {
+                draggedCatItem = this;
+                setTimeout(() => this.classList.add('opacity-50'), 0);
+            });
+            item.addEventListener('dragend', function() {
+                setTimeout(() => this.classList.remove('opacity-50'), 0);
+                draggedCatItem = null;
+            });
+        });
+
+        document.querySelectorAll('.cat-dropzone').forEach(zone => {
+            zone.addEventListener('dragover', e => e.preventDefault());
+            zone.addEventListener('dragenter', function(e) { e.preventDefault(); this.classList.add('brightness-95'); });
+            zone.addEventListener('dragleave', function() { this.classList.remove('brightness-95'); });
+            zone.addEventListener('drop', function() {
+                this.classList.remove('brightness-95');
+                if(draggedCatItem) {
+                    if(draggedCatItem.dataset.type === this.dataset.target) {
+                        this.appendChild(draggedCatItem);
+                        draggedCatItem.classList.remove('bg-indigo-100', 'cursor-grab');
+                        draggedCatItem.classList.add('bg-green-100', 'text-green-800', 'cursor-default', 'mb-2');
+                        draggedCatItem.setAttribute('draggable', 'false');
+                        
+                        document.getElementById('lab1-feedback').innerText = "Correctly Categorized!";
+                        document.getElementById('lab1-feedback').className = "text-center font-bold mt-4 h-6 text-green-600";
+                        
+                        // Check if complete
+                        if(document.getElementById('cat-items').children.length === 0) {
+                            setTimeout(() => showModal('Excellent!', 'You successfully categorized all the interfaces!', 'success'), 500);
+                        }
+                    } else {
+                        document.getElementById('lab1-feedback').innerText = "Incorrect category. Try again.";
+                        document.getElementById('lab1-feedback').className = "text-center font-bold mt-4 h-6 text-red-600";
+                    }
+                }
+            });
+        });
+
+        // --- STREAMING_CHUNK:Javascript for Lab 2 Matcher... ---
+        // --- Lab 2: Tool Scenario Matcher Logic ---
+        let selectedScenario = null;
+        let selectedTool = null;
+        let lab2Matches = 0;
+
+        document.querySelectorAll('.scenario-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if(this.classList.contains('matched')) return;
+                document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('ring-4', 'ring-red-300', 'bg-red-50'));
+                this.classList.add('ring-4', 'ring-red-300', 'bg-red-50');
+                selectedScenario = this;
+                checkMatch2();
+            });
+        });
+
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if(this.classList.contains('matched')) return;
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('ring-4', 'ring-red-300', 'bg-gray-100'));
+                this.classList.add('ring-4', 'ring-red-300', 'bg-gray-100');
+                selectedTool = this;
+                checkMatch2();
+            });
+        });
+
+        function checkMatch2() {
+            if(selectedScenario && selectedTool) {
+                if(selectedScenario.dataset.match === selectedTool.dataset.match) {
+                    selectedScenario.classList.add('matched', 'bg-green-100', 'text-green-800', 'border-green-500');
+                    selectedScenario.classList.remove('ring-4', 'ring-red-300');
+                    selectedTool.classList.add('matched', 'bg-green-100', 'text-green-800', 'border-green-500');
+                    selectedTool.classList.remove('ring-4', 'ring-red-300');
+                    
+                    document.getElementById('lab2-feedback').innerText = "Correct Match!";
+                    document.getElementById('lab2-feedback').className = "text-center font-bold mt-4 h-6 text-green-600";
+                    lab2Matches++;
+                    
+                    if(lab2Matches === 4) {
+                        setTimeout(() => showModal('Great Job!', 'You know your tools and cables perfectly.', 'success'), 500);
+                    }
+                } else {
+                    document.getElementById('lab2-feedback').innerText = "Incorrect. Think about the scenario requirement.";
+                    document.getElementById('lab2-feedback').className = "text-center font-bold mt-4 h-6 text-red-600";
+                    selectedScenario.classList.remove('ring-4', 'ring-red-300', 'bg-red-50');
+                    selectedTool.classList.remove('ring-4', 'ring-red-300', 'bg-gray-100');
+                }
+                selectedScenario = null;
+                selectedTool = null;
+            }
+        }
+
+        // --- STREAMING_CHUNK:Javascript for Retro Canvas Game... ---
+        // --- Retro Game Logic (Cable Snake) ---
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20; 
+        const tileCount = 20; 
+        
+        let snake = [{x: 10, y: 10}];
+        let velocity = {x: 0, y: 0};
+        let portItem = {x: 5, y: 5, type: 'usb'}; 
+        let score = 0;
+        let highScore = 0;
+        let gameLoop;
+        let isGameOver = false;
+
+        const portColors = {
+            'usb': '#9ca3af', 
+            'hdmi': '#eab308', 
+            'rj45': '#3b82f6'  
+        };
+
+        const overlay = document.getElementById('game-overlay');
+        const startBtn = document.getElementById('start-game-btn');
+
+        startBtn.addEventListener('click', startGame);
+
+        function startGame() {
+            overlay.classList.add('hidden');
+            resetGame();
+            velocity = {x: 1, y: 0}; 
+            isGameOver = false;
+            gameLoop = setInterval(updateGame, 1000 / 10); 
+        }
+
+        function resetGame() {
+            snake = [{x: 10, y: 10}];
+            velocity = {x: 0, y: 0};
+            score = 0;
+            document.getElementById('game-score').innerText = score;
+            placePort();
+        }
+
+        function placePort() {
+            const types = ['usb', 'hdmi', 'rj45'];
+            portItem = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount),
+                type: types[Math.floor(Math.random() * types.length)]
+            };
+            for(let part of snake) {
+                if(part.x === portItem.x && part.y === portItem.y) placePort();
+            }
+        }
+
+        function setDirection(dx, dy) {
+            if (velocity.x === 0 && dx !== 0 || velocity.y === 0 && dy !== 0) {
+                velocity = {x: dx, y: dy};
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if(isGameOver || overlay.classList.contains('hidden') === false) return;
+            switch(e.key) {
+                case 'ArrowUp': e.preventDefault(); setDirection(0, -1); break;
+                case 'ArrowDown': e.preventDefault(); setDirection(0, 1); break;
+                case 'ArrowLeft': e.preventDefault(); setDirection(-1, 0); break;
+                case 'ArrowRight': e.preventDefault(); setDirection(1, 0); break;
+            }
+        });
+
+        function updateGame() {
+            const head = {x: snake[0].x + velocity.x, y: snake[0].y + velocity.y};
+            
+            if(head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                gameOver();
+                return;
+            }
+
+            for(let i=0; i<snake.length; i++) {
+                if(head.x === snake[i].x && head.y === snake[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            snake.unshift(head); 
+
+            if(head.x === portItem.x && head.y === portItem.y) {
+                score += 10;
+                document.getElementById('game-score').innerText = score;
+                if(score > highScore) {
+                    highScore = score;
+                    document.getElementById('game-highscore').innerText = highScore;
+                }
+                placePort();
+            } else {
+                snake.pop(); 
+            }
+
+            drawGame();
+        }
+
+        function drawGame() {
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = portColors[portItem.type];
+            ctx.fillRect(portItem.x * gridSize + 2, portItem.y * gridSize + 2, gridSize - 4, gridSize - 4);
+
+            ctx.fillStyle = '#10b981'; 
+            for(let i=0; i<snake.length; i++) {
+                ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize - 1, gridSize - 1);
+            }
+        }
+
+        function gameOver() {
+            clearInterval(gameLoop);
+            isGameOver = true;
+            gameLoop = null;
+            overlay.classList.remove('hidden');
+            startBtn.innerText = "Game Over. Try Again";
+            startBtn.classList.replace('bg-green-500', 'bg-red-500');
+            startBtn.classList.replace('border-green-700', 'border-red-700');
+        }
+
+
+        // --- STREAMING_CHUNK:Javascript for Quiz Data and Grading... ---
+        // --- Quiz Logic ---
+        const quizData = [
+            { q: "Which of the following connectors is used for standard wired Ethernet networks?", options: ["RJ-11", "RJ-45", "USB-A", "VGA"], answer: 1 },
+            { q: "Which wireless technology operates at a very short range of about 4 cm and is commonly used for contactless payments?", options: ["Bluetooth", "Wi-Fi", "NFC", "RFID"], answer: 2 },
+            { q: "You need to attach an RJ-45 plug to the end of a Cat6 cable. Which tool should you use?", options: ["Cable Tester", "Punchdown Tool", "Crimper", "Wire Stripper"], answer: 2 },
+            { q: "Which USB standard is known for being completely reversible and supporting data, video, and high power delivery?", options: ["USB-A", "USB-B", "USB-C", "Micro-USB"], answer: 2 },
+            { q: "Which video interface is entirely analog and identifiable by its 15-pin blue connector?", options: ["HDMI", "DisplayPort", "DVI", "VGA"], answer: 3 },
+            { q: "Which of the following cables can transmit BOTH high-definition video and audio signals simultaneously?", options: ["VGA", "HDMI", "DVI", "USB-B"], answer: 1 },
+            { q: "What is the primary purpose of a cable tester?", options: ["To attach connectors to wires", "To measure power supply voltage", "To verify the physical integrity and continuity of network cables", "To boost the signal of a wireless network"], answer: 2 },
+            { q: "Which of the following is a proprietary connector primarily used by older Apple mobile devices before they adopted USB-C?", options: ["Lightning", "Thunderbolt", "USB-C", "FireWire"], answer: 0 },
+            { q: "A user wants to connect a wireless mouse to their laptop without using a USB dongle. Which interface is best suited for this?", options: ["NFC", "Bluetooth", "Wi-Fi Direct", "Infrared"], answer: 1 },
+            { q: "Which video interface is highly versatile, common on PC monitors, and supports multi-monitor daisy chaining?", options: ["VGA", "Composite", "DisplayPort", "DVI"], answer: 2 },
+            { q: "You are setting up a desktop printer. Which port shape are you most likely to plug into the back of the printer itself?", options: ["USB-A", "USB-B", "HDMI", "RJ-45"], answer: 1 },
+            { q: "Which of these provides the MOST reliable and fastest connection for a desktop computer in an office environment?", options: ["NFC", "Bluetooth", "Wi-Fi", "Ethernet (RJ-45)"], answer: 3 },
+            { q: "A user states their monitor has a white, digital-only connector. Which port is this likely describing?", options: ["VGA", "DVI", "HDMI", "USB-A"], answer: 1 },
+            { q: "If you need to connect two smartphones to quickly exchange a contact card simply by tapping them together, what technology is used?", options: ["NFC", "Ethernet", "DisplayPort", "USB-B"], answer: 0 },
+            { q: "Which tool physically presses metal pins into the wires of a twisted pair cable to secure an RJ-45 connector?", options: ["Cable Tester", "Multimeter", "Crimper", "Screwdriver"], answer: 2 },
+            { q: "True or False: USB-A ports can be plugged in either upside-up or upside-down.", options: ["True", "False"], answer: 1 },
+            { q: "Which connection is technically a Personal Area Network (PAN) and is often used for wireless headphones?", options: ["NFC", "RJ-45", "Bluetooth", "VGA"], answer: 2 },
+            { q: "A technician runs a long network cable through a wall. What tool MUST they use to ensure no wires broke inside the casing during the pull?", options: ["Crimper", "Cable Tester", "Loopback Plug", "Toner Probe"], answer: 1 },
+            { q: "Which of the following interfaces does NOT carry an audio signal by default?", options: ["HDMI", "DisplayPort", "VGA", "USB-C"], answer: 2 },
+            { q: "Which connector type was designed to eventually replace the larger USB-A on modern, ultra-thin laptops and phones?", options: ["USB-B", "USB-C", "Lightning", "RJ-11"], answer: 1 }
+        ];
+
+        const quizContainer = document.getElementById('quiz-container');
+        
+        quizData.forEach((item, index) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = "bg-gray-50 p-6 rounded-lg border border-gray-200 transition-all";
+            qDiv.id = `q-block-${index}`;
+            
+            const qTitle = document.createElement('h3');
+            qTitle.className = "font-bold text-lg text-gray-800 mb-4";
+            qTitle.innerText = `${index + 1}. ${item.q}`;
+            qDiv.appendChild(qTitle);
+            
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = "space-y-3";
+            
+            item.options.forEach((opt, optIndex) => {
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-3 p-3 rounded bg-white border border-gray-300 hover:bg-green-50 cursor-pointer transition";
+                
+                const radio = document.createElement('input');
+                radio.type = "radio";
+                radio.name = `q${index}`;
+                radio.value = optIndex;
+                radio.className = "form-radio h-5 w-5 text-green-600";
+                
+                const span = document.createElement('span');
+                span.className = "text-gray-700";
+                span.innerText = opt;
+                
+                label.appendChild(radio);
+                label.appendChild(span);
+                optionsDiv.appendChild(label);
+            });
+            
+            qDiv.appendChild(optionsDiv);
+            quizContainer.appendChild(qDiv);
+        });
+
+        function gradeQuiz() {
+            let score = 0;
+            let allAnswered = true;
+
+            // Check answers without applying visual success/fail styles to individual questions
+            for(let i = 0; i < quizData.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if(selected) {
+                    if(parseInt(selected.value) === quizData[i].answer) {
+                        score++;
+                    }
+                } else {
+                    allAnswered = false;
+                }
+            }
+            
+            if(!allAnswered) {
+                showModal('Incomplete Quiz', 'Please answer all 20 questions before submitting.', 'warning');
+                return;
+            }
+            
+            const percentage = (score / quizData.length) * 100;
+            
+            if(percentage >= 90) {
+                // Unlock Game and Cert Tabs
+                const navGame = document.getElementById('nav-game');
+                const navGameMobile = document.getElementById('nav-game-mobile');
+                
+                navGame.classList.remove('text-gray-400', 'cursor-not-allowed');
+                navGame.classList.add('text-white', 'hover:bg-green-600');
+                navGame.disabled = false;
+                navGame.innerHTML = '<i class="fa-solid fa-gamepad mr-1"></i>Game';
+                
+                navGameMobile.classList.remove('text-gray-400', 'cursor-not-allowed');
+                navGameMobile.classList.add('text-white', 'hover:bg-green-600');
+                navGameMobile.disabled = false;
+                navGameMobile.innerHTML = '<i class="fa-solid fa-gamepad"></i> Game';
+
+                document.getElementById('nav-cert').classList.remove('hidden');
+                document.getElementById('nav-cert-mobile').classList.remove('hidden');
+                
+                // Show proceed to game button
+                document.getElementById('proceed-game-btn').classList.remove('hidden');
+                document.getElementById('submit-quiz-btn').classList.add('hidden');
+
+                showModal('Outstanding!', `You scored ${score}/20 (${percentage}%). You have unlocked your Certificate of Mastery AND the Retro Game!`, 'success');
+            } else {
+                // Wipe answers for re-attempt
+                quizData.forEach((_, i) => {
+                    const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                    if(selected) selected.checked = false;
+                });
+                showModal('Keep Trying!', `You scored ${score}/20 (${percentage}%). You need 90% (18/20) to earn the certificate. Your answers have been reset so you can try again.`, 'error');
+                document.getElementById('quiz-section').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // --- STREAMING_CHUNK:Javascript for Certificate Generation... ---
+        // --- Certificate Logic ---
+        function updateCertName() {
+            let name = document.getElementById('student-name-input').value.trim();
+            
+            if(name) {
+                // Enforce first name only by splitting at space
+                if (name.includes(' ')) {
+                    name = name.split(' ')[0];
+                    document.getElementById('student-name-input').value = name;
+                    showModal('Notice', 'Only your first name has been applied to the certificate.', 'info');
+                }
+                document.getElementById('cert-student-name').innerText = name;
+            } else {
+                showModal('Wait!', 'Please enter your first name to update the certificate.', 'warning');
+            }
+        }
+
+        // Set Date dynamically
+        const today = new Date();
+        document.getElementById('cert-date').innerText = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        function downloadCert() {
+            const certEl = document.getElementById('certificate');
+            const name = document.getElementById('cert-student-name').innerText;
+            let filename = 'Certificate.png';
+            if (name) {
+                filename = `${name.replace(/\s+/g, '_')}_Certificate.png`;
+            }
+
+            const originalTransform = certEl.style.transform;
+            certEl.style.transform = 'none';
+
+            const btn = document.getElementById('download-btn');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Generating...';
+            btn.disabled = true;
+
+            html2canvas(certEl, { 
+                scale: 2, 
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                certEl.style.transform = originalTransform;
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+                
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+            }).catch(err => {
+                console.error(err);
+                certEl.style.transform = originalTransform;
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+                showModal('Error', 'Failed to generate image. Try using a desktop browser.', 'error');
+            });
+        }
+
+        window.onload = () => {
+            resetGame();
+            drawGame();
+        }
+    </script>
+</body>
+</html>

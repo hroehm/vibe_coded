@@ -205,16 +205,9 @@
                         </ul>
                     </div>
                     <div class="bg-gray-50 border-t border-gray-100 p-4">
-                        <div class="flex gap-2">
-                            <button onclick="toggleInfo('info-net-exp')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-1"></i> Details</button>
-                            <button onclick="toggleInfo('info-net-ex')" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-lightbulb text-yellow-600 mr-1"></i> Use Case</button>
-                        </div>
-                        
-                        <div id="info-net-exp" class="hidden mt-4 p-4 bg-white rounded border border-gray-200 text-sm text-gray-700 shadow-inner">
-                            <strong>RJ-45 vs RJ-11:</strong> Do not confuse RJ-45 (Ethernet, 8 pins, wider) with RJ-11 (old landline telephones, 4 or 6 pins, narrower).
-                        </div>
-                        <div id="info-net-ex" class="hidden mt-4 p-4 bg-blue-50 rounded border border-blue-200 text-sm text-blue-900 shadow-inner">
-                            Tapping your smartphone to a credit card reader at a coffee shop uses <strong>NFC</strong>. Connecting your wireless headset to your phone uses <strong>Bluetooth</strong>.
+                        <div class="flex gap-4">
+                            <button onclick="openBriefing('net-details')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded text-sm font-bold transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-book-open mr-2"></i> Details</button>
+                            <button onclick="openBriefing('net-usecase')" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-900 py-3 rounded text-sm font-bold transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-lightbulb text-yellow-600 mr-2"></i> Use Cases</button>
                         </div>
                     </div>
                 </div>
@@ -229,16 +222,9 @@
                         </ul>
                     </div>
                      <div class="bg-gray-50 border-t border-gray-100 p-4">
-                        <div class="flex gap-2">
-                            <button onclick="toggleInfo('info-tool-exp')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-1"></i> Details</button>
-                            <button onclick="toggleInfo('info-tool-ex')" class="flex-1 bg-red-100 hover:bg-red-200 text-red-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-lightbulb text-yellow-600 mr-1"></i> Use Case</button>
-                        </div>
-                        
-                        <div id="info-tool-exp" class="hidden mt-4 p-4 bg-white rounded border border-gray-200 text-sm text-gray-700 shadow-inner">
-                            Without a <strong>crimper</strong>, you cannot make custom-length ethernet cables. A <strong>cable tester</strong> saves hours of troubleshooting by instantly telling you if a cable is physically broken.
-                        </div>
-                        <div id="info-tool-ex" class="hidden mt-4 p-4 bg-red-50 rounded border border-red-200 text-sm text-red-900 shadow-inner">
-                            A technician runs 100ft of Cat6 cable through a ceiling. Before plugging it into the expensive router, they use a <strong>Cable Tester</strong> on both ends to ensure none of the inner wires broke during the pull.
+                        <div class="flex gap-4">
+                            <button onclick="openBriefing('tool-details')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded text-sm font-bold transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-book-open mr-2"></i> Details</button>
+                            <button onclick="openBriefing('tool-usecase')" class="flex-1 bg-red-100 hover:bg-red-200 text-red-900 py-3 rounded text-sm font-bold transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-lightbulb text-yellow-600 mr-2"></i> Use Cases</button>
                         </div>
                     </div>
                 </div>
@@ -255,16 +241,9 @@
                         </ul>
                     </div>
                      <div class="bg-gray-50 border-t border-gray-100 p-4">
-                        <div class="flex gap-2">
-                            <button onclick="toggleInfo('info-per-exp')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-1"></i> Details</button>
-                            <button onclick="toggleInfo('info-per-ex')" class="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-lightbulb text-yellow-600 mr-1"></i> Use Case</button>
-                        </div>
-                        
-                        <div id="info-per-exp" class="hidden mt-4 p-4 bg-white rounded border border-gray-200 text-sm text-gray-700 shadow-inner">
-                            USB (Universal Serial Bus) revolutionized computing by providing "plug-and-play" capability, eliminating the need for various obscure serial and parallel ports.
-                        </div>
-                        <div id="info-per-ex" class="hidden mt-4 p-4 bg-purple-50 rounded border border-purple-200 text-sm text-purple-900 shadow-inner">
-                            You buy a new ultra-thin laptop. It likely only has <strong>USB-C</strong> ports because they are small enough for thin designs, yet powerful enough to charge the laptop and run external displays simultaneously.
+                        <div class="flex gap-4">
+                            <button onclick="openBriefing('per-details')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded text-sm font-bold transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-book-open mr-2"></i> Details</button>
+                            <button onclick="openBriefing('per-usecase')" class="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-900 py-3 rounded text-sm font-bold transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-lightbulb text-yellow-600 mr-2"></i> Use Cases</button>
                         </div>
                     </div>
                 </div>
@@ -281,16 +260,9 @@
                         </ul>
                     </div>
                     <div class="bg-gray-50 border-t border-gray-100 p-4">
-                        <div class="flex gap-2">
-                            <button onclick="toggleInfo('info-disp-exp')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-1"></i> Details</button>
-                            <button onclick="toggleInfo('info-disp-ex')" class="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 py-2 rounded text-sm font-semibold transition"><i class="fa-solid fa-lightbulb text-yellow-600 mr-1"></i> Use Case</button>
-                        </div>
-                        
-                        <div id="info-disp-exp" class="hidden mt-4 p-4 bg-white rounded border border-gray-200 text-sm text-gray-700 shadow-inner">
-                            Knowing what ports transmit audio is a common exam topic. <strong>VGA and DVI do NOT transmit audio natively. HDMI and DisplayPort DO transmit audio.</strong>
-                        </div>
-                        <div id="info-disp-ex" class="hidden mt-4 p-4 bg-orange-50 rounded border border-orange-200 text-sm text-orange-900 shadow-inner">
-                            Setting up a home theater PC to connect to a television? You will absolutely use an <strong>HDMI</strong> cable to easily send both the 4K picture and the surround sound to the TV with one cord.
+                        <div class="flex gap-4">
+                            <button onclick="openBriefing('disp-details')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded text-sm font-bold transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-book-open mr-2"></i> Details</button>
+                            <button onclick="openBriefing('disp-usecase')" class="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-900 py-3 rounded text-sm font-bold transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-lightbulb text-yellow-600 mr-2"></i> Use Cases</button>
                         </div>
                     </div>
                 </div>
@@ -525,7 +497,194 @@
         </div>
     </div>
 
+    <!-- Content Briefing Modal -->
+    <div id="briefing-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[120] hidden flex justify-center items-center backdrop-blur-sm p-4 sm:p-6">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col transform transition-all overflow-hidden border-4 border-green-700">
+            
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <div class="flex items-center gap-4">
+                    <div id="briefing-modal-icon" class="text-4xl"></div>
+                    <h3 id="briefing-modal-title" class="text-2xl md:text-3xl font-bold text-gray-900"></h3>
+                </div>
+                <button onclick="closeBriefing()" class="text-gray-400 hover:text-red-600 transition text-4xl leading-none">&times;</button>
+            </div>
+            
+            <!-- Modal Body (Scrollable) -->
+            <div id="briefing-modal-content" class="p-6 md:p-10 overflow-y-auto flex-grow text-gray-700 text-lg leading-relaxed bg-white">
+                <!-- Dynamic Content Injected Here -->
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-gray-200 bg-gray-50 flex justify-end">
+                <button onclick="closeBriefing()" class="bg-green-700 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-green-800 transition shadow-md">Acknowledge & Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // --- STREAMING_CHUNK:Briefing Content Data... ---
+        const briefingData = {
+            'net-details': {
+                title: 'Networking Interfaces: Detailed Breakdown',
+                icon: '<i class="fa-solid fa-network-wired text-blue-600"></i>',
+                html: `
+                    <p class="mb-5">Networking interfaces are the fundamental physical and wireless gateways that allow individual computing devices to communicate, share data, and form the backbone of the internet. Without these standardized interfaces, a computer is essentially an isolated island of data. They define the rules, physical connector shapes, and signal frequencies used to transmit binary data between hosts.</p>
+                    
+                    <p class="mb-5">The most ubiquitous wired networking interface is Ethernet, typically utilizing an RJ-45 (Registered Jack-45) connector. Unlike older telephone lines which used narrower RJ-11 jacks with 4 or 6 pins, an RJ-45 connector features 8 distinct metal pins. These pins align with the 8 colored wires inside twisted pair cables (like Category 5e or Category 6). Ethernet is highly favored in enterprise environments because it provides a dedicated, highly reliable, full-duplex connection capable of speeds ranging from 1 Gbps up to 10 Gbps and beyond, while being heavily resistant to outside interference.</p>
+                    
+                    <p class="mb-5">Transitioning to wireless connectivity, Bluetooth serves as the primary protocol for establishing Personal Area Networks (PANs). Operating on the 2.4 GHz radio frequency, Bluetooth is not designed for heavy, long-distance network traffic like streaming 4K video across a building. Instead, it is highly optimized for short-range (typically 10 to 30 meters), low-power communication. This makes it the ideal interface for wirelessly connecting peripherals such as headsets, mice, keyboards, and smartwatches to a central host device without draining battery life.</p>
+                    
+                    <p class="mb-5">For even closer interactions, Near-Field Communication (NFC) provides an ultra-short-range wireless interface. NFC relies on electromagnetic induction to transmit data, meaning it requires devices to be within roughly 4 centimeters of one another—or even touching. While this extremely short range might seem like a limitation, it is actually NFC's greatest strength. It acts as a physical security barrier, ensuring that data (like credit card information) cannot be intercepted by someone sitting across the room.</p>
+                    
+                    <p class="mb-5">When technicians and system architects design a network, they must carefully choose between these interfaces based on strict use case constraints. Ethernet is chosen when absolute speed, low latency, and physical security are required. Bluetooth is selected when mobility and power efficiency are paramount for user peripherals. NFC is specifically deployed when an interaction requires intentional, physical proximity to authorize a transaction or pair devices securely.</p>
+                    
+                    <p>Modern devices rarely rely on just one of these technologies. A standard enterprise laptop, for example, will use an RJ-45 port (or a USB-C Ethernet adapter) to connect securely to the corporate intranet, employ Bluetooth to connect to the user's wireless headset for a conference call, and might even feature an NFC reader to allow the user to log in simply by tapping their company ID badge against the palm rest.</p>
+                `
+            },
+            'net-usecase': {
+                title: 'Networking Interfaces: Practical Use Cases',
+                icon: '<i class="fa-solid fa-lightbulb text-yellow-500"></i>',
+                html: `
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold text-blue-800 mb-2 border-b-2 border-blue-200 pb-1">Use Case 1: The Corporate Office (Ethernet)</h4>
+                        <p>A new architectural firm is setting up a design studio. Because the architects work with massive 3D rendering files that exceed several gigabytes, connecting their desktop workstations via Wi-Fi would be too slow and susceptible to interference from other devices. The IT team runs Cat6 cable from the central server room to every desk, terminating them in <strong>RJ-45 (Ethernet)</strong> wall jacks. This ensures every architect has a dedicated, uninterrupted 10-Gigabit connection to the rendering server.</p>
+                    </div>
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold text-blue-800 mb-2 border-b-2 border-blue-200 pb-1">Use Case 2: The Mobile Worker (Bluetooth)</h4>
+                        <p>A traveling sales representative is working from a crowded coffee shop. They need to join a virtual meeting but do not want to disturb the other patrons or be tethered to their laptop by cords. They turn on their wireless noise-canceling headphones. The laptop and headphones communicate via a <strong>Bluetooth</strong> Personal Area Network (PAN), allowing the user to experience clear, low-latency audio while having the freedom to move their head and hands freely without getting tangled in wires.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-blue-800 mb-2 border-b-2 border-blue-200 pb-1">Use Case 3: Modern Retail Transactions (NFC)</h4>
+                        <p>A customer is purchasing groceries at a supermarket. Instead of sliding a credit card into a chip reader or handing cash to the cashier, the customer simply unlocks their smartphone and taps it directly against the point-of-sale terminal. The terminal and the phone exchange encrypted payment tokens using <strong>NFC (Near-Field Communication)</strong>. Because NFC only works within 4 centimeters, the customer's payment data cannot be accidentally read by the terminal of the cashier in the next lane over.</p>
+                    </div>
+                `
+            },
+            'tool-details': {
+                title: 'Networking Tools: Detailed Breakdown',
+                icon: '<i class="fa-solid fa-toolbox text-red-600"></i>',
+                html: `
+                    <p class="mb-5">In the realm of IT infrastructure, understanding theoretical network protocols is only half the battle; the physical layer must actually be built, maintained, and repaired. This physical layer relies heavily on copper twisted-pair cables. To manage these physical connections, network technicians rely on specialized, purpose-built hardware tools. Two of the most indispensable tools in a technician's toolkit are the cable crimper and the cable tester.</p>
+                    
+                    <p class="mb-5">Before a cable can be used, it must be terminated. Bulk network cable (like Cat5e or Cat6) comes in massive spools containing hundreds of feet of wire with no ends attached. Inside the thick outer jacket of these cables are four pairs of tightly twisted, color-coded copper wires (eight wires total). To make a usable patch cable, a technician must cut the cable to length, carefully strip away the outer jacket, untwist the internal pairs, and arrange the eight wires into a highly specific color-coded sequence (known as the T568A or T568B wiring standard).</p>
+                    
+                    <p class="mb-5">This is where the <strong>Crimper</strong> comes into play. A crimper is a heavy-duty, pliers-like mechanical tool specifically designed to attach an RJ-45 plastic connector to the prepared end of a cable. Once the properly sequenced wires are pushed deep into the plastic RJ-45 plug, the plug is inserted into the die of the crimper. When the technician squeezes the handles, the tool permanently presses small, gold-plated metal pins inside the plug down into the copper wires, piercing their insulation and creating a solid electrical connection. Without a crimper, it is impossible to create custom-length network cables.</p>
+                    
+                    <p class="mb-5">Once a cable is crimped, or after a long cable has been pulled through the walls and ceilings of an office building, its physical integrity must be verified. Visual inspection is not enough; a wire might have broken inside its insulation during a tough pull, or the technician might have accidentally swapped the green and orange wires during the crimping process. To verify the cable, technicians use a <strong>Cable Tester</strong>.</p>
+                    
+                    <p class="mb-5">A cable tester is an electronic diagnostic device that comes in two parts: a main unit and a detachable remote unit. The technician plugs one end of the network cable into the main unit and the other end into the remote. The tester then sends electrical signals down each of the eight individual wires in sequence. By reading the LED lights or LCD screen on the tester, the technician can instantly see if the cable has continuity (a complete circuit).</p>
+                    
+                    <p>Furthermore, an advanced cable tester can diagnose specific faults. It can tell the technician if there is an "Open" (a broken wire that fails to reach the other side), a "Short" (two bare wires touching each other inside the jacket, causing data corruption), or a "Crossed Pair" (wires inserted in the wrong order at one end). Using these tools in tandem ensures that the physical network foundation is rock-solid before complex routers and switches are ever powered on.</p>
+                `
+            },
+            'tool-usecase': {
+                title: 'Networking Tools: Practical Use Cases',
+                icon: '<i class="fa-solid fa-lightbulb text-yellow-500"></i>',
+                html: `
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold text-red-800 mb-2 border-b-2 border-red-200 pb-1">Use Case 1: Custom Server Rack Wiring (Crimper)</h4>
+                        <p>An IT administrator is organizing a messy server rack that is currently overflowing with pre-bought 10-foot cables, even though the servers are only 2 feet away from the network switch. To clean up the airflow and organization, the administrator buys a spool of bulk Cat6 cable. They measure the exact distance from each server to the switch (e.g., 2.5 feet), cut the cable, arrange the internal wires to the T568B standard, and use a <strong>Crimper</strong> to attach RJ-45 plugs to the ends. They repeat this process to create perfectly sized, custom-length patch cables for the entire rack.</p>
+                    </div>
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold text-red-800 mb-2 border-b-2 border-red-200 pb-1">Use Case 2: Post-Installation Verification (Tester)</h4>
+                        <p>A team of contractors has just finished running 150 feet of network cable through the drop-ceiling of a new office space, dropping it down inside the wall to a new cubicle. Before they close up the walls and declare the job finished, the lead technician plugs the wall-jack end into the remote of their <strong>Cable Tester</strong>, walks to the server room, and plugs the other end into the main tester unit. The tester reveals that pin #4 is not lighting up. The technician realizes the wire was nicked when it was pulled around a sharp corner in the ceiling, allowing them to replace the bad run immediately rather than dealing with troubleshooting later.</p>
+                    </div>
+                `
+            },
+            'per-details': {
+                title: 'Peripheral Interfaces: Detailed Breakdown',
+                icon: '<i class="fa-brands fa-usb text-purple-600"></i>',
+                html: `
+                    <p class="mb-5">Peripheral interfaces dictate how external devices—like keyboards, external hard drives, cameras, and printers—connect and communicate with a host computer. Historically, computers featured a chaotic array of proprietary ports: large parallel ports for printers, serial ports for mice, and PS/2 ports for keyboards. The introduction of the Universal Serial Bus (USB) revolutionized computing by providing a standardized, "plug-and-play" interface that could handle data and power simultaneously for almost any device.</p>
+                    
+                    <p class="mb-5">The most recognizable legacy connector is <strong>USB Type-A</strong>. This is the flat, rectangular port found on almost every desktop computer, laptop, and gaming console made in the last two decades. USB-A relies on a non-reversible, asymmetrical internal pin structure, meaning it can only be plugged in one way (famously leading to users flipping the cable multiple times to plug it in). It remains ubiquitous for low-bandwidth devices like basic mice, keyboards, and USB flash drives.</p>
+                    
+                    <p class="mb-5">While USB-A is meant for the host computer, <strong>USB Type-B</strong> was designed for the peripheral device end. USB-B has a square shape with beveled top corners, making it exceptionally sturdy and difficult to accidentally pull out. Because of its physical robustness, it is almost exclusively used on large, stationary devices that remain permanently tethered to a desk, such as desktop laser printers, document scanners, and external audio interfaces.</p>
+                    
+                    <p class="mb-5">The current frontier of peripheral connectivity is <strong>USB Type-C</strong>. Designed to fix the physical annoyances of previous generations, USB-C is a compact, oval-shaped connector that features 24 internal pins and is entirely reversible—it can be plugged in upside down or right-side up. Beyond physical convenience, USB-C is incredibly powerful. It supports massive data transfer speeds (upwards of 40 Gbps on USB4 protocols), can deliver up to 240 watts of power to charge high-end gaming laptops, and supports "Alternate Modes" which allow it to transmit native DisplayPort or Thunderbolt video signals.</p>
+                    
+                    <p class="mb-5">Parallel to the evolution of USB, Apple utilized a proprietary connector called <strong>Lightning</strong> for its mobile ecosystem. Introduced in 2012, Lightning predated USB-C as an 8-pin, fully reversible connector for iPhones and iPads. While highly innovative at the time, its data transfer speeds remained largely capped at older USB 2.0 speeds. Due to increasing global regulations pushing for electronic waste reduction and standardization, the Lightning interface is being aggressively phased out in favor of the universal USB-C standard.</p>
+                    
+                    <p>Understanding these interfaces is critical for IT professionals, as they must manage device compatibility, understand the power delivery limitations of older cables, and deploy the correct adapters when interfacing modern thin-and-light laptops (which may only possess USB-C ports) with legacy enterprise hardware (which often still rely on USB-A and USB-B).</p>
+                `
+            },
+            'per-usecase': {
+                title: 'Peripheral Interfaces: Practical Use Cases',
+                icon: '<i class="fa-solid fa-lightbulb text-yellow-500"></i>',
+                html: `
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold text-purple-800 mb-2 border-b-2 border-purple-200 pb-1">Use Case 1: The Standard Office Desk (USB-A & USB-B)</h4>
+                        <p>An office worker is setting up a standard desktop PC provided by their company. They plug their wired mouse and mechanical keyboard into the rectangular <strong>USB-A</strong> ports on the back of the tower. They then need to connect a heavy-duty document scanner. They take a cable that has a standard USB-A plug on one end (which goes into the PC) and a square, beveled <strong>USB-B</strong> plug on the other end, which pushes firmly and securely into the back of the scanner.</p>
+                    </div>
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold text-purple-800 mb-2 border-b-2 border-purple-200 pb-1">Use Case 2: The Modern Laptop Docking Station (USB-C)</h4>
+                        <p>A manager returns to their desk with an ultra-thin, modern laptop. Instead of plugging in a separate power brick, a monitor cable, and a mouse dongle, they simply take a single <strong>USB-C</strong> cable from their desk dock and plug it into the side of the laptop. Because of USB-C's immense capabilities, that single reversible cable simultaneously provides 100 watts of power to charge the battery, sends a 4K video signal to an external monitor via Alt Mode, and routes data to the external hard drive and gigabit ethernet port attached to the dock.</p>
+                    </div>
+                `
+            },
+            'disp-details': {
+                title: 'Display Technologies: Detailed Breakdown',
+                icon: '<i class="fa-solid fa-desktop text-orange-600"></i>',
+                html: `
+                    <p class="mb-5">Display technologies are responsible for transmitting visual data from a computer's graphics processing unit (GPU) to a monitor, television, or projector. The evolution of display interfaces over the last thirty years charts a steady progression from blurry analog signals to crystal-clear, high-bandwidth digital data streams.</p>
+                    
+                    <p class="mb-5">The oldest widely recognized standard is <strong>VGA (Video Graphics Array)</strong>. Instantly identifiable by its blue, 15-pin, D-sub connector and screw-in thumb knobs, VGA transmits an entirely analog signal. Because analog signals are rendered as continuous electrical waves, VGA is highly susceptible to electrical interference and signal degradation over long cable runs. As screen resolutions grew higher and LCD panels replaced old tube TVs, VGA's inability to render sharp, pixel-perfect digital images led to its obsolescence, though it is still occasionally found on legacy server racks and old classroom projectors. Notably, VGA carries only video data; it cannot transmit audio.</p>
+                    
+                    <p class="mb-5">To bridge the gap between analog and digital, <strong>DVI (Digital Visual Interface)</strong> was introduced. Recognizable by its large, often white connector housing many pins and an off-center crosshair pin, DVI was the first standard to deliver a pure digital video signal to LCD monitors. While providing a massive leap in image sharpness over VGA, DVI connectors were physically bulky and, like VGA, were not natively designed to carry audio signals alongside the video.</p>
+                    
+                    <p class="mb-5">The consumer electronics industry shifted dramatically with the introduction of <strong>HDMI (High-Definition Multimedia Interface)</strong>. HDMI was revolutionary because it was designed to carry uncompressed, high-definition digital video AND multi-channel digital audio simultaneously over a single, compact cable. This eliminated the need for separate audio cables, making it the undisputed, universal standard for home theater systems, televisions, and modern consumer monitors. HDMI also introduced mandatory HDCP (High-bandwidth Digital Content Protection) to prevent the piracy of movies and shows over the cable.</p>
+                    
+                    <p class="mb-5">While HDMI dominated the living room, <strong>DisplayPort</strong> was developed specifically to dominate the high-end PC and enterprise workspace. DisplayPort uses a packet-based data transmission system (similar to Ethernet), allowing for incredibly high bandwidth. This makes DisplayPort the preferred choice for running multiple 4K displays from a single port via "daisy-chaining," or for PC gamers who require extreme refresh rates (like 144Hz or 240Hz) to ensure smooth, tear-free motion on high-end gaming monitors. Like HDMI, DisplayPort also carries audio.</p>
+                    
+                    <p>For an IT technician or systems administrator, knowing which port to use is critical. They must know to reach for DisplayPort when setting up a high-end graphic designer's multi-monitor workstation, utilize HDMI when setting up a digital signage TV in a lobby, and keep active VGA-to-HDMI adapters in their toolkit to handle inevitable encounters with legacy hardware.</p>
+                `
+            },
+            'disp-usecase': {
+                title: 'Display Technologies: Practical Use Cases',
+                icon: '<i class="fa-solid fa-lightbulb text-yellow-500"></i>',
+                html: `
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold text-orange-800 mb-2 border-b-2 border-orange-200 pb-1">Use Case 1: The Home Theater PC (HDMI)</h4>
+                        <p>A user is building a small media PC to place in their living room to stream movies and play casual games on their large flat-screen television. They connect the PC to the television using an <strong>HDMI</strong> cable. This is the optimal choice because the single HDMI cable flawlessly delivers the 4K digital video signal to the screen while simultaneously transmitting the 5.1 surround sound audio signal directly to the TV's soundbar setup.</p>
+                    </div>
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold text-orange-800 mb-2 border-b-2 border-orange-200 pb-1">Use Case 2: The Multi-Monitor Trading Desk (DisplayPort)</h4>
+                        <p>A financial analyst requires four high-resolution monitors to track various stock markets simultaneously. Their workstation's graphics card features four <strong>DisplayPort</strong> outputs. The IT technician uses DisplayPort cables because they offer the massive bandwidth required to push millions of pixels across four screens without any lag or frame dropping, ensuring the analyst has a real-time, crisp view of the market data.</p>
+                    </div>
+                     <div>
+                        <h4 class="text-xl font-bold text-orange-800 mb-2 border-b-2 border-orange-200 pb-1">Use Case 3: Supporting Legacy Infrastructure (VGA)</h4>
+                        <p>A guest speaker arrives at a university lecture hall with a modern, ultra-thin laptop. The ceiling-mounted projector in the hall is 15 years old and only has a thick blue cable hanging from it. The IT support staff provides the speaker with an active adapter dongle that takes the digital signal from the laptop and converts it to an analog signal to push through the <strong>VGA</strong> cable, allowing the older projector to display the presentation.</p>
+                    </div>
+                `
+            }
+        };
+
+        // Modal Control Functions
+        function openBriefing(key) {
+            const modal = document.getElementById('briefing-modal');
+            const data = briefingData[key];
+            
+            if(data) {
+                document.getElementById('briefing-modal-icon').innerHTML = data.icon;
+                document.getElementById('briefing-modal-title').innerText = data.title;
+                document.getElementById('briefing-modal-content').innerHTML = data.html;
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            }
+        }
+
+        function closeBriefing() {
+            document.getElementById('briefing-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto'; // Restore background scrolling
+        }
+
+        // Close on outside click
+        document.getElementById('briefing-modal').addEventListener('click', function(e) {
+            if(e.target === this) {
+                closeBriefing();
+            }
+        });
+        
         // --- Navigation Logic ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));

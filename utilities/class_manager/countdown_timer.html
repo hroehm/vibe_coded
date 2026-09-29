@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Classroom Countdown Timer</title>
+  <style>
+    :root {
+      --clock-color: #0f172a;
+      --bg-color: #ffffff;
+      --border-gray: #cbd5e1;
+      --accent: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--clock-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      touch-action: manipulation;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Navigation Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      background-color: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 30;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .hub-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      text-decoration: none;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: 1px solid #cbd5e1;
+    }
+    .hub-link:active {
+      background-color: #e2e8f0;
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    /* Active Pass Floating Pill */
+    .pass-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      padding: 0.4rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .pass-status-pill:hover {
+      background: #dbeafe;
+    }
+    .pass-status-pill.has-active {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+      animation: pulseAlert 2s infinite;
+    }
+
+    @keyframes pulseAlert {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.9; transform: scale(1.02); }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-header {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-header:active {
+      background-color: #f8fafc;
+    }
+    .btn-header.active-muted {
+      background-color: #fee2e2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+    }
+
+    /* Main Display Zone */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 1rem;
+    }
+
+    #timer-display {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: clamp(5.5rem, 18vw, 14rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: var(--clock-color);
+      text-align: center;
+      cursor: pointer;
+      transition: font-size 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+    }
+
+    /* Active Pass Sub-Banner below clock */
+    #timer-pass-notice {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      align-items: center;
+      max-width: 90vw;
+    }
+
+    .active-pass-tag {
+      background-color: rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(15, 23, 42, 0.15);
+      border-radius: 9999px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .active-pass-tag.is-override {
+      background-color: #fee2e2;
+      border-color: #f87171;
+      color: #991b1b;
+    }
+    .active-pass-tag button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 800;
+      color: #64748b;
+      margin-left: 0.2rem;
+    }
+
+    /* Full-screen Running State */
+    body.is-running header,
+    body.is-running #setup-controls,
+    body.is-running #presets-bar {
+      display: none !important;
+    }
+
+    body.is-running main {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      z-index: 50;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--bg-color);
+    }
+
+    body.is-running #timer-display {
+      font-size: clamp(10rem, 30vw, 36vh);
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Overtime Expired State */
+    .overtime {
+      color: #dc2626 !important;
+      animation: flash 1.2s infinite ease-in-out;
+    }
+
+    @keyframes flash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+
+    .overtime-badge {
+      display: none;
+      background-color: #fee2e2;
+      color: #b91c1c;
+      font-size: 0.9rem;
+      font-weight: 800;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      margin-top: 1rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid #fca5a5;
+    }
+
+    body.is-overtime .overtime-badge {
+      display: inline-block;
+    }
+
+    body.is-running.is-overtime .overtime-badge {
+      position: absolute;
+      bottom: calc(50% - clamp(6rem, 18vw, 22vh));
+      margin-top: 0;
+    }
+
+    /* Setup Controls */
+    #setup-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+      z-index: 10;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .quick-increments {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-inc {
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid #cbd5e1;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+    }
+    .btn-inc:active {
+      background: #e2e8f0;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .btn-start {
+      background-color: #0f172a;
+      color: #ffffff;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1.4rem;
+      font-weight: 800;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+      cursor: pointer;
+      min-width: 180px;
+    }
+    .btn-start:active {
+      transform: scale(0.97);
+    }
+
+    .btn-secondary {
+      background-color: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      padding: 1rem 1.4rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .btn-secondary:active {
+      background-color: #f1f5f9;
+    }
+
+    /* Presets Bar */
+    #presets-bar {
+      display: flex;
+      justify-content: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      padding: 0 1rem 1.75rem;
+      transition: opacity 0.3s ease;
+    }
+
+    .btn-preset {
+      background-color: rgba(248, 250, 252, 0.9);
+      border: 1px solid #cbd5e1;
+      padding: 0.55rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+    }
+    .btn-preset:active {
+      background-color: #0f172a;
+      color: #ffffff;
+    }
+
+    .btn-preset.period-preset {
+      background-color: #f0fdf4;
+      border-color: #86efac;
+      color: #166534;
+    }
+
+    .btn-preset.custom {
+      background-color: #eff6ff;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+    }
+
+    /* In-Flight Touch Floating HUD */
+    #running-overlay {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.75rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 60;
+    }
+    body.is-running #running-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .btn-overlay {
+      background-color: rgba(15, 23, 42, 0.92);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 0.85rem 1.4rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-overlay.overlay-muted {
+      background-color: rgba(185, 28, 28, 0.92);
+    }
+
+    /* Modal Overlays */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .modal-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: min(92vw, 440px);
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-bottom: 1.25rem;
+      color: #0f172a;
+    }
+
+    .color-section-heading {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 0.5rem;
+      margin-top: 1rem;
+    }
+    .color-section-heading:first-of-type {
+      margin-top: 0;
+    }
+
+    .custom-time-inputs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin: 1.25rem 0;
+    }
+    .time-field {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .time-field input {
+      width: 80px;
+      height: 60px;
+      font-size: 2rem;
+      text-align: center;
+      font-weight: 800;
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: inherit;
+    }
+    .time-field label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-top: 0.35rem;
+      text-transform: uppercase;
+    }
+    .time-colon {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #64748b;
+      margin-bottom: 1rem;
+    }
+
+    .color-swatches {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
+    }
+    .swatch-btn {
+      width: 100%;
+      height: 44px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      cursor: pointer;
+    }
+    .swatch-btn:active {
+      transform: scale(0.96);
+    }
+
+    .custom-color-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 0.65rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .mute-toggle-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+    }
+    .mute-toggle-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .mute-toggle-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #0f172a;
+    }
+    .mute-toggle-sub {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .switch-ui {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch-ui input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider-ui {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #cbd5e1;
+      transition: .25s;
+      border-radius: 24px;
+    }
+    .slider-ui:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .25s;
+      border-radius: 50%;
+    }
+    .switch-ui input:checked + .slider-ui {
+      background-color: #ef4444;
+    }
+    .switch-ui input:checked + .slider-ui:before {
+      transform: translateX(20px);
+    }
+
+    .audio-option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .audio-radio {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .audio-radio input {
+      margin-right: 0.6rem;
+    }
+
+    .file-upload-box {
+      border: 1px dashed #94a3b8;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-top: 0.25rem;
+      background: #f8fafc;
+      font-size: 0.85rem;
+    }
+
+    .btn-modal-action {
+      width: 100%;
+      background: #0f172a;
+      color: white;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .audio-test-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .btn-test {
+      flex: 1;
+      background: #e2e8f0;
+      border: none;
+      padding: 0.65rem;
+      border-radius: 6px;
+      font-weight: 700;
+      color: #1e293b;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header id="top-bar">
+    <a href="index.html" class="hub-link" id="hub-link" title="Return to Landing Page">
+      <span>&#8592;</span>
+      <span>Main Hub</span>
+    </a>
+
+    <!-- Center Pass Tracker Live Indicator -->
+    <div class="header-center">
+      <a href="pass_tracker.html" class="pass-status-pill" id="header-pass-pill" title="Open Pass Manager">
+        <span id="pass-indicator-dot">&#9679;</span>
+        <span id="pass-status-text">Pass Tracker: 0 Out</span>
+      </a>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-header" id="btn-quick-mute" onclick="toggleMute()" title="Toggle Sound Mute">&#128266; Sound On</button>
+      <button class="btn-header" id="btn-audio-modal">&#9881; Options</button>
+      <button class="btn-header" id="btn-color-modal">&#127912; Colors</button>
+    </div>
+  </header>
+
+  <!-- Main Countdown Stage -->
+  <main id="stage" onclick="handleStageClick()">
+    <div id="timer-display">10:00</div>
+    <div class="overtime-badge" id="overtime-badge">Time Expired</div>
+
+    <!-- Active Pass Names Floating Notice -->
+    <div id="timer-pass-notice"></div>
+
+    <!-- Running Floating Touch Controls -->
+    <div id="running-overlay">
+      <button class="btn-overlay" onclick="toggleTimer(event)">Pause</button>
+      <button class="btn-overlay" id="btn-overlay-mute" onclick="toggleMute(event)">Mute</button>
+      <button class="btn-overlay" onclick="adjustTime(60, event)">+1 Min</button>
+      <button class="btn-overlay" onclick="resetTimer(event)">Exit</button>
+    </div>
+  </main>
+
+  <!-- Setup Increments & Actions -->
+  <section id="setup-controls">
+    <div class="quick-increments">
+      <button class="btn-inc" onclick="adjustTime(-300)">-5m</button>
+      <button class="btn-inc" onclick="adjustTime(-60)">-1m</button>
+      <button class="btn-inc" onclick="adjustTime(-15)">-15s</button>
+      <button class="btn-inc" onclick="adjustTime(15)">+15s</button>
+      <button class="btn-inc" onclick="adjustTime(60)">+1m</button>
+      <button class="btn-inc" onclick="adjustTime(300)">+5m</button>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-secondary" onclick="resetTimer()">Reset</button>
+      <button class="btn-start" id="start-btn" onclick="toggleTimer()">START</button>
+    </div>
+  </section>
+
+  <!-- Presets Bar (Includes landing page bell schedule remaining-time button) -->
+  <section id="presets-bar">
+    <button class="btn-preset period-preset hidden" id="btn-period-time" onclick="setRemainingPeriodTime()">Period End</button>
+    <button class="btn-preset" onclick="setTime(1)">1m</button>
+    <button class="btn-preset" onclick="setTime(2)">2m</button>
+    <button class="btn-preset" onclick="setTime(3)">3m</button>
+    <button class="btn-preset" onclick="setTime(5)">5m</button>
+    <button class="btn-preset" onclick="setTime(10)">10m</button>
+    <button class="btn-preset" onclick="setTime(15)">15m</button>
+    <button class="btn-preset" onclick="setTime(20)">20m</button>
+    <button class="btn-preset" onclick="setTime(30)">30m</button>
+    <button class="btn-preset custom" onclick="openCustomTimeModal()">&#9881; Custom Time</button>
+  </section>
+
+  <!-- Custom Time Setup Modal -->
+  <div class="modal-overlay" id="custom-time-modal">
+    <div class="modal-card">
+      <h3 class="modal-title">Set Custom Time</h3>
+      <div class="custom-time-inputs">
+        <div class="time-field">
+          <input type="number" id="custom-min" min="0" max="999" value="10" inputmode="numeric" />
+          <label for="custom-min">Minutes</label>
+        </div>
+        <div class="time-colon">:</div>
+        <div class="time-field">
+          <input type="number" id="custom-sec" min="0" max="59" value="00" inputmode="numeric" />
+          <label for="custom-sec">Seconds</label>
+        </div>
+      </div>
+      <button class="btn-modal-action" onclick="applyCustomTime()">Apply Time</button>
+      <button class="btn-secondary" style="width:100%; margin-top:0.5rem;" onclick="closeModals()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Clock & Background Color Selection Modal -->
+  <div class="modal-overlay" id="color-modal">
+    <div class="modal-card">
+      <h3 class="modal-title">Clock &amp; Background Colors</h3>
+
+      <div class="color-section-heading">Clock Digit Color</div>
+      <div class="color-swatches">
+        <button class="swatch-btn" style="background:#0f172a" onclick="setClockColor('#0f172a')"></button>
+        <button class="swatch-btn" style="background:#1e40af" onclick="setClockColor('#1e40af')"></button>
+        <button class="swatch-btn" style="background:#701c2e" onclick="setClockColor('#701c2e')"></button>
+        <button class="swatch-btn" style="background:#047857" onclick="setClockColor('#047857')"></button>
+        <button class="swatch-btn" style="background:#6d28d9" onclick="setClockColor('#6d28d9')"></button>
+        <button class="swatch-btn" style="background:#c2410c" onclick="setClockColor('#c2410c')"></button>
+        <button class="swatch-btn" style="background:#0369a1" onclick="setClockColor('#0369a1')"></button>
+        <button class="swatch-btn" style="background:#ffffff; border: 2px solid #94a3b8;" onclick="setClockColor('#ffffff')"></button>
+      </div>
+      <div class="custom-color-row">
+        <label for="clock-color-picker" style="font-weight:700; font-size:0.9rem;">Custom Digit Hex:</label>
+        <input type="color" id="clock-color-picker" onchange="setClockColor(this.value)" style="width:48px; height:32px; border:none; cursor:pointer;" />
+      </div>
+
+      <div class="color-section-heading">Background Color</div>
+      <div class="color-swatches">
+        <button class="swatch-btn" style="background:#ffffff; border: 2px solid #94a3b8;" onclick="setBgColor('#ffffff')"></button>
+        <button class="swatch-btn" style="background:#f8fafc" onclick="setBgColor('#f8fafc')"></button>
+        <button class="swatch-btn" style="background:#0f172a" onclick="setBgColor('#0f172a')"></button>
+        <button class="swatch-btn" style="background:#000000" onclick="setBgColor('#000000')"></button>
+        <button class="swatch-btn" style="background:#fef3c7" onclick="setBgColor('#fef3c7')"></button>
+        <button class="swatch-btn" style="background:#ecfdf5" onclick="setBgColor('#ecfdf5')"></button>
+        <button class="swatch-btn" style="background:#eff6ff" onclick="setBgColor('#eff6ff')"></button>
+        <button class="swatch-btn" style="background:#1e1b4b" onclick="setBgColor('#1e1b4b')"></button>
+      </div>
+      <div class="custom-color-row">
+        <label for="bg-color-picker" style="font-weight:700; font-size:0.9rem;">Custom Background Hex:</label>
+        <input type="color" id="bg-color-picker" onchange="setBgColor(this.value)" style="width:48px; height:32px; border:none; cursor:pointer;" />
+      </div>
+
+      <button class="btn-modal-action" onclick="closeModals()">Done</button>
+    </div>
+  </div>
+
+  <!-- Audio Modal -->
+  <div class="modal-overlay" id="audio-modal">
+    <div class="modal-card">
+      <h3 class="modal-title">Sound Options</h3>
+
+      <label class="mute-toggle-card">
+        <div class="mute-toggle-info">
+          <span class="mute-toggle-title">Mute Sound Effects</span>
+          <span class="mute-toggle-sub">Silence completion alerts &amp; custom tones</span>
+        </div>
+        <div class="switch-ui">
+          <input type="checkbox" id="modal-mute-toggle" onchange="setMuteState(this.checked)">
+          <span class="slider-ui"></span>
+        </div>
+      </label>
+
+      <div class="color-section-heading">Alert Melody</div>
+      <div class="audio-option-group">
+        <label class="audio-radio">
+          <span><input type="radio" name="sound-opt" value="bell" checked onchange="setAudioOption(this.value)"> School Bell Chime</span>
+        </label>
+        <label class="audio-radio">
+          <span><input type="radio" name="sound-opt" value="marimba" onchange="setAudioOption(this.value)"> Marimba Fanfare</span>
+        </label>
+        <label class="audio-radio">
+          <span><input type="radio" name="sound-opt" value="beep" onchange="setAudioOption(this.value)"> Digital Beep</span>
+        </label>
+        <label class="audio-radio">
+          <span><input type="radio" name="sound-opt" value="custom" id="radio-custom" onchange="setAudioOption(this.value)"> Upload Local Audio File</span>
+        </label>
+      </div>
+
+      <div class="file-upload-box" id="file-box">
+        <label style="display:block; font-weight:700; margin-bottom:0.35rem;">Attach Audio File (MP3, M4A, WAV):</label>
+        <input type="file" id="local-file-input" accept="audio/*" onchange="handleFileUpload(event)" style="font-size:0.8rem; width:100%;" />
+        <div id="file-name-label" style="margin-top:0.35rem; color:#64748b; font-size:0.75rem; font-weight:600;">No file attached</div>
+      </div>
+
+      <div class="audio-test-row">
+        <button class="btn-test" onclick="testAudio()">&#9654; Test Sound</button>
+        <button class="btn-test" onclick="stopAudio()">&#9632; Stop</button>
+      </div>
+
+      <button class="btn-modal-action" onclick="closeModals()">Save &amp; Close</button>
+    </div>
+  </div>
+
+  <audio id="apple-audio-player" playsinline preload="auto"></audio>
+
+  <script>
+    // Timer State
+    let totalSeconds = 600;
+    let initialConfigSeconds = 600;
+    let isRunning = false;
+    let isMuted = false;
+    let timerInterval = null;
+    let selectedAudio = 'bell';
+    let overlayTimeout = null;
+    let wakeLock = null;
+    let customAudioDataUrl = null;
+
+    // Synchronized Landing Page & Pass Tracker State
+    let activePasses = [];
+    let bellSchedule = {};
+    let currentPeriodMinutesLeft = null;
+
+    const STORAGE_KEY_ACTIVE = 'pass_tracker_active_passes_v9';
+    const STORAGE_KEY_LOGS = 'pass_tracker_daily_logs_v9';
+    const STORAGE_KEY_SCHEDULE = 'pass_tracker_schedule_v9';
+
+    // Web Audio State
+    let webAudioCtx = null;
+    let activeSynthNodes = [];
+
+    function getAudioContext() {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      if (!webAudioCtx || webAudioCtx.state === 'closed') {
+        webAudioCtx = new AudioContextClass();
+      }
+      if (webAudioCtx.state === 'suspended') {
+        webAudioCtx.resume();
+      }
+      return webAudioCtx;
+    }
+
+    function unlockAppleHardwareAudio() {
+      const ctx = getAudioContext();
+      if (ctx) {
+        try {
+          const buffer = ctx.createBuffer(1, 1, 22050);
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(ctx.destination);
+          source.start(0);
+        } catch (e) {}
+      }
+
+      const player = document.getElementById('apple-audio-player');
+      if (player && player.paused && !player.src) {
+        player.load();
+      }
+    }
+
+    function stopAllSynthNodes() {
+      activeSynthNodes.forEach(node => {
+        try {
+          if (node.stop) node.stop();
+          if (node.disconnect) node.disconnect();
+        } catch (e) {}
+      });
+      activeSynthNodes = [];
+    }
+
+    // Audio Generators
+    function playSyntheticSound(type) {
+      if (isMuted) return;
+      stopAudio();
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+
+      if (type === 'bell') {
+        const freqs = [659.25, 523.25, 587.33, 392.00];
+        freqs.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.3);
+          gain.gain.setValueAtTime(0, now + i * 0.3);
+          gain.gain.linearRampToValueAtTime(0.4, now + i * 0.3 + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.3 + 1.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.3);
+          osc.stop(now + i * 0.3 + 1.25);
+          activeSynthNodes.push(osc, gain);
+        });
+      } else if (type === 'marimba') {
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
+        freqs.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.12);
+          gain.gain.setValueAtTime(0.4, now + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.65);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.12);
+          osc.stop(now + i * 0.12 + 0.7);
+          activeSynthNodes.push(osc, gain);
+        });
+      } else if (type === 'beep') {
+        [0, 0.22, 0.44].forEach((offset) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(960, now + offset);
+          gain.gain.setValueAtTime(0, now + offset);
+          gain.gain.linearRampToValueAtTime(0.35, now + offset + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.15);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.16);
+          activeSynthNodes.push(osc, gain);
+        });
+      }
+    }
+
+    function triggerExpirationAudio() {
+      if (isMuted) return;
+
+      if (selectedAudio === 'custom' && customAudioDataUrl) {
+        const player = document.getElementById('apple-audio-player');
+        player.pause();
+        player.currentTime = 0;
+        const playPromise = player.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => playSyntheticSound('bell'));
+        }
+      } else {
+        playSyntheticSound(selectedAudio);
+      }
+    }
+
+    function testAudio() {
+      if (isMuted) setMuteState(false);
+      unlockAppleHardwareAudio();
+      triggerExpirationAudio();
+    }
+
+    function stopAudio() {
+      const player = document.getElementById('apple-audio-player');
+      if (player) {
+        player.pause();
+        player.currentTime = 0;
+      }
+      stopAllSynthNodes();
+    }
+
+    // Mute Controls
+    function toggleMute(e) {
+      if (e) e.stopPropagation();
+      setMuteState(!isMuted);
+    }
+
+    function setMuteState(mute) {
+      isMuted = mute;
+      if (isMuted) stopAudio();
+      localStorage.setItem('cls_timer_muted', isMuted ? 'true' : 'false');
+      updateMuteUI();
+    }
+
+    function updateMuteUI() {
+      const quickBtn = document.getElementById('btn-quick-mute');
+      const overlayBtn = document.getElementById('btn-overlay-mute');
+      const modalToggle = document.getElementById('modal-mute-toggle');
+
+      if (modalToggle) modalToggle.checked = isMuted;
+
+      if (isMuted) {
+        if (quickBtn) {
+          quickBtn.innerHTML = '&#128263; Muted';
+          quickBtn.classList.add('active-muted');
+        }
+        if (overlayBtn) {
+          overlayBtn.textContent = 'Unmute';
+          overlayBtn.classList.add('overlay-muted');
+        }
+      } else {
+        if (quickBtn) {
+          quickBtn.innerHTML = '&#128266; Sound On';
+          quickBtn.classList.remove('active-muted');
+        }
+        if (overlayBtn) {
+          overlayBtn.textContent = 'Mute';
+          overlayBtn.classList.remove('overlay-muted');
+        }
+      }
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          customAudioDataUrl = e.target.result;
+          const player = document.getElementById('apple-audio-player');
+          player.src = customAudioDataUrl;
+          player.load();
+          document.getElementById('file-name-label').textContent = `Loaded: ${file.name}`;
+          document.getElementById('radio-custom').checked = true;
+          selectedAudio = 'custom';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function setAudioOption(val) {
+      selectedAudio = val;
+    }
+
+    // Timer Engine
+    function updateDisplay() {
+      const display = document.getElementById('timer-display');
+      const isNegative = totalSeconds < 0;
+      const abs = Math.abs(totalSeconds);
+      const mins = Math.floor(abs / 60);
+      const secs = abs % 60;
+      display.textContent = `${isNegative ? '+' : ''}${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      if (isNegative) {
+        document.body.classList.add('is-overtime');
+        display.classList.add('overtime');
+      } else {
+        document.body.classList.remove('is-overtime');
+        display.classList.remove('overtime');
+      }
+    }
+
+    function toggleTimer(e) {
+      if (e) e.stopPropagation();
+      unlockAppleHardwareAudio();
+
+      if (isRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function startTimer() {
+      if (totalSeconds <= 0) totalSeconds = initialConfigSeconds;
+      isRunning = true;
+      document.body.classList.add('is-running');
+      document.getElementById('start-btn').textContent = 'PAUSE';
+      requestWakeLock();
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        totalSeconds--;
+        updateDisplay();
+        if (totalSeconds === 0) {
+          triggerExpirationAudio();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      isRunning = false;
+      clearInterval(timerInterval);
+      stopAudio();
+      document.getElementById('start-btn').textContent = 'RESUME';
+      document.body.classList.remove('is-running');
+      hideOverlay();
+      releaseWakeLock();
+    }
+
+    function resetTimer(e) {
+      if (e) e.stopPropagation();
+      isRunning = false;
+      clearInterval(timerInterval);
+      stopAudio();
+      releaseWakeLock();
+
+      document.body.classList.remove('is-running');
+      document.body.classList.remove('is-overtime');
+      const display = document.getElementById('timer-display');
+      display.classList.remove('overtime');
+
+      hideOverlay();
+      totalSeconds = initialConfigSeconds;
+      document.getElementById('start-btn').textContent = 'START';
+      updateDisplay();
+    }
+
+    function setTime(mins) {
+      stopAudio();
+      pauseTimer();
+      initialConfigSeconds = mins * 60;
+      totalSeconds = initialConfigSeconds;
+      document.getElementById('start-btn').textContent = 'START';
+      updateDisplay();
+    }
+
+    function adjustTime(secs, e) {
+      if (e) e.stopPropagation();
+      totalSeconds += secs;
+      if (!isRunning && totalSeconds > 0) {
+        initialConfigSeconds = totalSeconds;
+      }
+      updateDisplay();
+    }
+
+    // Modal Configuration
+    function openCustomTimeModal() {
+      pauseTimer();
+      const mins = Math.floor(initialConfigSeconds / 60);
+      const secs = initialConfigSeconds % 60;
+      document.getElementById('custom-min').value = mins;
+      document.getElementById('custom-sec').value = secs;
+      document.getElementById('custom-time-modal').classList.add('active');
+    }
+
+    function applyCustomTime() {
+      const minVal = parseInt(document.getElementById('custom-min').value, 10) || 0;
+      const secVal = parseInt(document.getElementById('custom-sec').value, 10) || 0;
+      const combined = Math.max(1, (minVal * 60) + secVal);
+
+      initialConfigSeconds = combined;
+      totalSeconds = combined;
+      document.getElementById('start-btn').textContent = 'START';
+      updateDisplay();
+      closeModals();
+    }
+
+    function handleStageClick() {
+      if (!isRunning) return;
+      const overlay = document.getElementById('running-overlay');
+      overlay.classList.add('visible');
+      clearTimeout(overlayTimeout);
+      overlayTimeout = setTimeout(hideOverlay, 3500);
+    }
+
+    function hideOverlay() {
+      document.getElementById('running-overlay').classList.remove('visible');
+    }
+
+    function setClockColor(hex) {
+      document.documentElement.style.setProperty('--clock-color', hex);
+      document.getElementById('clock-color-picker').value = hex;
+      localStorage.setItem('cls_clock_color', hex);
+    }
+
+    function setBgColor(hex) {
+      document.documentElement.style.setProperty('--bg-color', hex);
+      document.getElementById('bg-color-picker').value = hex;
+      localStorage.setItem('cls_bg_color', hex);
+    }
+
+    document.getElementById('btn-color-modal').addEventListener('click', () => {
+      unlockAppleHardwareAudio();
+      document.getElementById('color-modal').classList.add('active');
+    });
+    document.getElementById('btn-audio-modal').addEventListener('click', () => {
+      unlockAppleHardwareAudio();
+      document.getElementById('audio-modal').classList.add('active');
+    });
+
+    function closeModals() {
+      stopAudio();
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+
+    // WakeLock API
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {}
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release().then(() => { wakeLock = null; });
+      }
+    }
+
+    /* =========================================================================
+       SYNCHRONIZATION WITH LANDING PAGE CONFIGURATION & PASS TRACKER
+       ========================================================================= */
+    function syncWithHubAndPassTracker() {
+      // 1. Sync Landing Page Schedule for Period End Presets
+      const savedSched = localStorage.getItem(STORAGE_KEY_SCHEDULE);
+      if (savedSched) {
+        try {
+          bellSchedule = JSON.parse(savedSched);
+        } catch (e) {}
+      }
+
+      evaluateCurrentPeriodTime();
+
+      // 2. Sync Active Passes from Pass Tracker
+      try {
+        activePasses = JSON.parse(localStorage.getItem(STORAGE_KEY_ACTIVE)) || [];
+      } catch (e) {
+        activePasses = [];
+      }
+
+      renderPassNoticeHUD();
+    }
+
+    function evaluateCurrentPeriodTime() {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      let matchedMinutesLeft = null;
+      let matchedPeriodName = null;
+
+      Object.keys(bellSchedule).forEach(blockName => {
+        const item = bellSchedule[blockName];
+        if (item && item.start && item.end) {
+          const [sh, sm] = item.start.split(':').map(Number);
+          const [eh, em] = item.end.split(':').map(Number);
+          const startM = sh * 60 + sm;
+          const endM = eh * 60 + em;
+
+          if (currentMinutes >= startM && currentMinutes < endM) {
+            matchedMinutesLeft = endM - currentMinutes;
+            matchedPeriodName = blockName;
+          }
+        }
+      });
+
+      const btn = document.getElementById('btn-period-time');
+      if (matchedMinutesLeft !== null && matchedMinutesLeft > 0) {
+        currentPeriodMinutesLeft = matchedMinutesLeft;
+        btn.textContent = `${matchedPeriodName} End (${matchedMinutesLeft}m)`;
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+
+    function setRemainingPeriodTime() {
+      if (currentPeriodMinutesLeft) {
+        setTime(currentPeriodMinutesLeft);
+      }
+    }
+
+    function renderPassNoticeHUD() {
+      const pill = document.getElementById('header-pass-pill');
+      const text = document.getElementById('pass-status-text');
+      const noticeContainer = document.getElementById('timer-pass-notice');
+
+      const count = activePasses.length;
+      if (count > 0) {
+        pill.classList.add('has-active');
+        text.textContent = `Pass Tracker: ${count} Out`;
+
+        // Render mini student tags on the stage
+        noticeContainer.innerHTML = activePasses.map(p => `
+          <span class="active-pass-tag ${p.isOverride ? 'is-override' : ''}">
+            <span>${p.isOverride ? '&#9888;' : '&#128100;'} ${escapeHtml(p.student)} (${p.type || 'Bathroom'})</span>
+            <button onclick="checkInStudentFromTimer('${escapeHtml(p.student)}')" title="Check In Now">&times;</button>
+          </span>
+        `).join('');
+      } else {
+        pill.classList.remove('has-active');
+        text.textContent = `Pass Tracker: 0 Out`;
+        noticeContainer.innerHTML = '';
+      }
+    }
+
+    // Direct Pass Check-In (Synchronizes state to pass_tracker.html & landing page)
+    function checkInStudentFromTimer(studentName) {
+      const idx = activePasses.findIndex(p => p.student === studentName);
+      if (idx !== -1) {
+        const pass = activePasses[idx];
+        const endTime = new Date().toISOString();
+        const durationMin = Math.max(1, Math.round((new Date(endTime) - new Date(pass.startTime)) / 60000));
+
+        let logs = [];
+        try {
+          logs = JSON.parse(localStorage.getItem(STORAGE_KEY_LOGS)) || [];
+        } catch (e) {}
+
+        logs.unshift({
+          id: pass.id,
+          student: pass.student,
+          type: pass.type || 'Bathroom',
+          block: pass.block,
+          isOverride: !!pass.isOverride,
+          startTime: pass.startTime,
+          endTime: endTime,
+          durationMinutes: durationMin
+        });
+
+        activePasses.splice(idx, 1);
+
+        // Update storage so Pass Tracker reflects change immediately
+        localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logs));
+        localStorage.setItem(STORAGE_KEY_ACTIVE, JSON.stringify(activePasses));
+
+        renderPassNoticeHUD();
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Listen for storage events (e.g. teacher checks out a student in pass_tracker.html in another tab)
+    window.addEventListener('storage', (e) => {
+      if (
+        e.key === STORAGE_KEY_ACTIVE ||
+        e.key === STORAGE_KEY_SCHEDULE ||
+        e.key === 'cls_clock_color' ||
+        e.key === 'cls_bg_color'
+      ) {
+        const savedClock = localStorage.getItem('cls_clock_color');
+        if (savedClock) setClockColor(savedClock);
+        const savedBg = localStorage.getItem('cls_bg_color');
+        if (savedBg) setBgColor(savedBg);
+
+        syncWithHubAndPassTracker();
+      }
+    });
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedClockColor = localStorage.getItem('cls_clock_color');
+      if (savedClockColor) setClockColor(savedClockColor);
+
+      const savedBgColor = localStorage.getItem('cls_bg_color');
+      if (savedBgColor) setBgColor(savedBgColor);
+
+      const savedMute = localStorage.getItem('cls_timer_muted');
+      if (savedMute === 'true') {
+        isMuted = true;
+      }
+      updateMuteUI();
+
+      syncWithHubAndPassTracker();
+      setInterval(syncWithHubAndPassTracker, 15000);
+
+      updateDisplay();
+
+      ['click', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, unlockAppleHardwareAudio, { once: true, passive: true });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Classroom Group Maker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #0f172a;
+      --card-bg: #ffffff;
+      --accent-color: #701c2e; /* CHS Maroon */
+      --border-color: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      touch-action: manipulation;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .hub-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      text-decoration: none;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: 1px solid #cbd5e1;
+      cursor: pointer;
+    }
+    .hub-link:active {
+      background-color: #e2e8f0;
+      transform: scale(0.98);
+    }
+
+    .custom-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+
+    .btn-maroon {
+      background-color: var(--accent-color);
+      color: #ffffff;
+    }
+    .btn-maroon:active {
+      opacity: 0.9;
+      transform: scale(0.98);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .modal-backdrop.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .keypad-btn {
+      height: 56px;
+      border-radius: 12px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .keypad-btn:active {
+      background-color: #e2e8f0;
+      transform: scale(0.96);
+    }
+
+    .student-pill {
+      touch-action: none;
+      cursor: grab;
+    }
+    .student-pill:active {
+      cursor: grabbing;
+    }
+    .student-pill.dragging {
+      opacity: 0.45;
+      transform: scale(0.98);
+    }
+    .student-insert-indicator {
+      border-top: 3px solid var(--accent-color) !important;
+    }
+
+    .group-banner {
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .drag-over {
+      border: 2px dashed var(--accent-color) !important;
+      background-color: rgba(112, 28, 46, 0.05) !important;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake {
+      animation: shake 0.35s ease-in-out;
+    }
+
+    @media print {
+      header, nav, #teacher-panel, #unassigned-container, .modal-backdrop, #lock-badge, button, select, input[type="color"] {
+        display: none !important;
+      }
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      .custom-card {
+        border: 1px solid #94a3b8 !important;
+        page-break-inside: avoid;
+        margin-bottom: 1rem;
+      }
+      .group-banner {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body class="p-3 sm:p-5 flex flex-col min-h-screen">
+
+  <!-- Main Navigation Header -->
+  <header class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200">
+    <a href="index.html" class="hub-link" id="hub-link" title="Return to Landing Page">
+      <span>&#8592;</span>
+      <span>Main Hub</span>
+    </a>
+
+    <div class="flex items-center gap-2">
+      <h1 class="text-xl sm:text-2xl font-black tracking-tight" id="app-heading">Classroom Groups</h1>
+      <span id="lock-badge" class="text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+        <span>&#128274;</span> Student Display View
+      </span>
+      <span id="sync-hub-badge" class="hidden sm:inline-flex text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+        &#10003; Roster Synced to Hub
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button onclick="downloadMasterTemplate()" class="px-3 py-2 rounded-lg border border-slate-300 bg-white font-bold text-xs sm:text-sm text-slate-700 shadow-sm active:bg-slate-100">
+        &#128196; Download Template
+      </button>
+
+      <button onclick="openExportModal()" class="px-3 py-2 rounded-lg border border-slate-300 bg-white font-bold text-xs sm:text-sm text-slate-700 shadow-sm active:bg-slate-100 flex items-center gap-1">
+        <span>&#128229;</span> Export / Share
+      </button>
+
+      <button id="auth-btn" onclick="handleAuthAction()" class="px-3.5 py-2 rounded-lg font-bold text-xs sm:text-sm shadow-sm transition-all btn-maroon flex items-center gap-1.5">
+        <span id="auth-icon">&#128274;</span>
+        <span id="auth-label">Teacher Options</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Block Choice Bar (Block 1 - Block 5) -->
+  <nav class="flex items-center gap-2 my-4 overflow-x-auto pb-1" aria-label="Block Navigation">
+    <button onclick="switchBlock(1)" id="tab-b1" class="block-tab flex-1 min-w-[90px] py-2.5 px-3 rounded-xl font-black text-sm text-center border transition-all">Block 1</button>
+    <button onclick="switchBlock(2)" id="tab-b2" class="block-tab flex-1 min-w-[90px] py-2.5 px-3 rounded-xl font-black text-sm text-center border transition-all">Block 2</button>
+    <button onclick="switchBlock(3)" id="tab-b3" class="block-tab flex-1 min-w-[90px] py-2.5 px-3 rounded-xl font-black text-sm text-center border transition-all">Block 3</button>
+    <button onclick="switchBlock(4)" id="tab-b4" class="block-tab flex-1 min-w-[90px] py-2.5 px-3 rounded-xl font-black text-sm text-center border transition-all">Block 4</button>
+    <button onclick="switchBlock(5)" id="tab-b5" class="block-tab flex-1 min-w-[90px] py-2.5 px-3 rounded-xl font-black text-sm text-center border transition-all">Block 5</button>
+  </nav>
+
+  <!-- TEACHER PROTECTED OPTIONS PANEL -->
+  <section id="teacher-panel" class="hidden mb-6 p-4 sm:p-5 rounded-2xl custom-card shadow-sm border space-y-5">
+    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
+      <div>
+        <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+          <span>&#9881;</span> Teacher Control Center &mdash; <span id="panel-block-title" class="text-maroon">Block 1</span>
+        </h2>
+        <p class="text-xs text-slate-500 font-semibold mt-0.5">Manage groupings, roles, sorting, and canvas colors. Master rosters are imported on the Main Hub.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="index.html" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-700 active:bg-slate-100 flex items-center gap-1">
+          <span>&#9881;</span> Hub Master Setup
+        </a>
+        <button onclick="openColorModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-700 active:bg-slate-100 flex items-center gap-1">
+          <span>&#127912;</span> Canvas Theme
+        </button>
+        <button onclick="lockTeacherMode()" class="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 font-bold text-xs active:bg-red-100">
+          &#128274; Lock Mode
+        </button>
+      </div>
+    </div>
+
+    <!-- Strategy & Jobs Configuration Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+      <div>
+        <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Grouping Mode</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="mode-auto-btn" onclick="setGroupingType('auto')" class="py-2 text-xs font-black rounded-lg border text-center transition-all bg-white border-slate-300">Auto</button>
+          <button id="mode-manual-btn" onclick="setGroupingType('manual')" class="py-2 text-xs font-black rounded-lg border text-center transition-all bg-transparent text-slate-600 border-transparent">Manual</button>
+        </div>
+      </div>
+
+      <div id="auto-config-fields" class="contents">
+        <div>
+          <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Strategy for <span class="current-block-label">Block 1</span></label>
+          <div class="flex gap-2">
+            <select id="group-strategy" onchange="updateBlockStrategy(this.value)" class="flex-1 text-xs font-bold p-2 bg-white rounded-lg border border-slate-300">
+              <option value="size">Students Per Group</option>
+              <option value="count">Total Number of Groups</option>
+            </select>
+            <input type="number" id="group-target" min="2" max="25" value="3" onchange="updateBlockTarget(this.value)" class="w-16 p-2 text-center text-sm font-black bg-white rounded-lg border border-slate-300" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Group Naming Scheme</label>
+          <select id="group-naming" onchange="updateBlockNaming(this.value)" class="w-full text-xs font-bold p-2 bg-white rounded-lg border border-slate-300">
+            <option value="numbers">Group 1, Group 2, ...</option>
+            <option value="colors">Colors (Crimson, Cobalt, Emerald...)</option>
+            <option value="tech">Tech Ops (Cyber, Alpha, Sentinel...)</option>
+            <option value="nato">NATO (Alpha, Bravo, Charlie...)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Team Jobs Checkbox & Config Button -->
+      <div>
+        <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Team Jobs / Roles</label>
+        <div class="flex items-center gap-2 mt-1">
+          <label class="inline-flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="enable-jobs-checkbox" onchange="toggleTeamJobs(this.checked)" class="w-4 h-4 rounded text-maroon cursor-pointer" />
+            <span class="text-xs font-bold text-slate-800">Enable Jobs</span>
+          </label>
+          <button onclick="openJobsModal()" id="btn-config-jobs" class="ml-auto px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100">
+            &#9881; Customize
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Execution & Post-Creation Sorting Row -->
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="generateGroups()" class="btn-maroon px-5 py-2.5 rounded-xl font-black text-sm shadow-sm flex items-center gap-2">
+          <span>&#9889;</span> Auto-Form Groups
+        </button>
+        <button onclick="addEmptyGroup()" class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-sm text-slate-700 active:bg-slate-100 flex items-center gap-1.5">
+          <span>&#65291;</span> Add Empty Group
+        </button>
+        <button onclick="clearCurrentGroups()" class="px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-xs text-slate-600 active:bg-slate-100">
+          Reset Groups
+        </button>
+
+        <!-- SORT OPTIONS -->
+        <div class="flex items-center gap-1.5 bg-white border border-slate-300 rounded-xl p-1 shadow-sm ml-1">
+          <span class="text-[11px] font-black uppercase text-slate-400 px-2">Sort Mode:</span>
+          <select id="sort-selector" onchange="handleSortSelection(this.value)" class="text-xs font-bold bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none cursor-pointer">
+            <option value="manual">&#9776; Manual Sort (Drag &amp; Drop)</option>
+            <option value="alpha-first">&#128280; Alphabetical (First Name)</option>
+            <option value="alpha-last">&#128280; Alphabetical (Last Name)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Hub CSV & Attendance Controls -->
+      <div class="flex items-center gap-2">
+        <a href="index.html" class="px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-xs text-slate-700 active:bg-slate-100 flex items-center gap-1.5 shadow-sm">
+          <span>&#128194;</span> Import Master CSV
+        </a>
+        <button onclick="openManageRosterModal()" class="px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-xs text-slate-700 active:bg-slate-100">
+          Attendance &amp; Rules
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Unassigned Pool -->
+  <section id="unassigned-container" class="hidden mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-amber-800 font-extrabold text-sm">&#128101; Unassigned Students (<span id="unassigned-count">0</span>)</span>
+        <span class="text-xs text-amber-700 font-medium">Drag or tap a student into any group or specific position</span>
+      </div>
+    </div>
+    <div id="unassigned-roster" class="flex flex-wrap gap-2 min-h-[44px] p-2 bg-white/70 rounded-xl border border-amber-200" ondragover="allowDrop(event)" ondrop="handleDrop(event, -1, -1)">
+    </div>
+  </section>
+
+  <!-- Main Display: Groups Grid -->
+  <main class="flex-1">
+    <div class="flex items-center justify-between mb-3 px-1">
+      <div class="flex items-center gap-2">
+        <h3 class="text-lg font-black tracking-tight" id="display-block-heading">Block 1 Groups</h3>
+        <span id="active-roster-pill" class="text-xs px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 border border-slate-200">0 Students</span>
+        <span id="active-jobs-indicator" class="hidden text-xs px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">Jobs Enabled</span>
+      </div>
+      <div class="text-xs font-semibold text-slate-500" id="conflict-warning-badge"></div>
+    </div>
+
+    <!-- Groups Container -->
+    <div id="groups-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+
+    <!-- Empty State (Shown by default on first load) -->
+    <div id="empty-state" class="p-12 text-center border-2 border-dashed border-slate-200 rounded-2xl my-8">
+      <div class="text-4xl mb-3">&#128101;</div>
+      <h3 class="text-base font-black text-slate-700">No Groups Generated Yet</h3>
+      <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">Click "Teacher Options" and select "Auto-Form Groups" or build your groups manually.</p>
+    </div>
+  </main>
+
+  <!-- Security Keypad Modal -->
+  <div class="modal-backdrop" id="keypad-modal">
+    <div class="bg-white rounded-2xl p-6 w-[340px] max-w-[92vw] shadow-2xl border border-slate-200 text-slate-900" id="keypad-box">
+      <div class="text-center mb-4">
+        <div class="inline-flex p-2.5 rounded-full bg-slate-100 text-slate-800 text-xl mb-1.5">&#128274;</div>
+        <h3 class="text-lg font-black">Teacher Passcode</h3>
+        <p class="text-xs text-slate-500 font-semibold">Enter passcode configured on the Main Hub</p>
+      </div>
+
+      <div class="flex justify-center gap-3 my-4" id="pin-dots-container"></div>
+
+      <div class="grid grid-cols-3 gap-2.5 mt-2">
+        <button onclick="pressKey('1')" class="keypad-btn">1</button>
+        <button onclick="pressKey('2')" class="keypad-btn">2</button>
+        <button onclick="pressKey('3')" class="keypad-btn">3</button>
+        <button onclick="pressKey('4')" class="keypad-btn">4</button>
+        <button onclick="pressKey('5')" class="keypad-btn">5</button>
+        <button onclick="pressKey('6')" class="keypad-btn">6</button>
+        <button onclick="pressKey('7')" class="keypad-btn">7</button>
+        <button onclick="pressKey('8')" class="keypad-btn">8</button>
+        <button onclick="pressKey('9')" class="keypad-btn">9</button>
+        <button onclick="closeKeypad()" class="keypad-btn text-xs font-black uppercase text-slate-500">Cancel</button>
+        <button onclick="pressKey('0')" class="keypad-btn">0</button>
+        <button onclick="pressClear()" class="keypad-btn text-xs font-black uppercase text-red-500">&#9003;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Jobs Customization Modal -->
+  <div class="modal-backdrop" id="jobs-modal">
+    <div class="bg-white rounded-2xl p-6 w-[520px] max-w-[94vw] shadow-2xl border border-slate-200 text-slate-900 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+        <div>
+          <h3 class="text-lg font-black"><span class="current-block-label">Block 1</span> Team Jobs</h3>
+          <p class="text-xs text-slate-500 font-semibold">Saved per block &amp; persistent across reloads</p>
+        </div>
+        <button onclick="closeJobsModal()" class="text-slate-400 font-black text-xl hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="flex gap-2 mb-4">
+        <input type="text" id="new-job-title" placeholder="New Job (e.g. Lead Tech, Timekeeper, Scribe)..." class="flex-1 p-2 text-sm font-semibold rounded-lg border border-slate-300" onkeydown="if(event.key==='Enter') addCustomJob()" />
+        <button onclick="addCustomJob()" class="px-4 py-2 rounded-lg btn-maroon font-bold text-xs whitespace-nowrap">Add Job</button>
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">Active Roles in <span class="current-block-label">Block 1</span> (<span id="modal-jobs-count">0</span>)</label>
+        <div id="modal-jobs-list" class="max-h-56 overflow-y-auto space-y-1.5 p-2 bg-slate-50 rounded-xl border border-slate-200"></div>
+      </div>
+
+      <div class="border-t border-slate-200 pt-3">
+        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Load Preset Roles</label>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="loadJobPreset('standard')" class="px-2.5 py-1 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 border border-slate-300">Classroom Standard</button>
+          <button onclick="loadJobPreset('techops')" class="px-2.5 py-1 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 border border-slate-300">Tech Ops</button>
+          <button onclick="loadJobPreset('clear')" class="px-2.5 py-1 text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-200">Clear All Jobs</button>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-between items-center">
+        <span class="text-[11px] text-slate-400 font-semibold">&#10003; Saved automatically for this block</span>
+        <button onclick="closeJobsModal()" class="px-5 py-2.5 rounded-xl btn-maroon font-bold text-xs">Save &amp; Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Color & Canvas Theme Modal -->
+  <div class="modal-backdrop" id="color-modal">
+    <div class="bg-white rounded-2xl p-6 w-[420px] max-w-[92vw] shadow-2xl border border-slate-200 text-slate-900 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-lg font-black mb-1">Canvas Theme Options</h3>
+      <p class="text-xs text-slate-500 font-semibold mb-4">Set page background and display font colors.</p>
+
+      <div class="space-y-4">
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div>
+            <div class="text-xs font-black text-slate-800">Background Color</div>
+            <div class="text-[11px] text-slate-500">Default is clean white (#ffffff)</div>
+          </div>
+          <input type="color" id="bg-color-picker" onchange="applyBgColor(this.value)" class="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent" />
+        </div>
+
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div>
+            <div class="text-xs font-black text-slate-800">Font / Text Color</div>
+            <div class="text-[11px] text-slate-500">Primary display font</div>
+          </div>
+          <input type="color" id="font-color-picker" onchange="applyFontColor(this.value)" class="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent" />
+        </div>
+
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div>
+            <div class="text-xs font-black text-slate-800">Card Surface Background</div>
+            <div class="text-[11px] text-slate-500">Card body backgrounds</div>
+          </div>
+          <input type="color" id="card-color-picker" onchange="applyCardColor(this.value)" class="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent" />
+        </div>
+
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div>
+            <div class="text-xs font-black text-slate-800">Accent Color</div>
+            <div class="text-[11px] text-slate-500">Buttons &amp; Highlights</div>
+          </div>
+          <input type="color" id="accent-color-picker" onchange="applyAccentColor(this.value)" class="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">Preset Themes</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="setThemePreset('#ffffff', '#0f172a', '#ffffff', '#701c2e')" class="p-2 rounded-lg border border-slate-300 text-xs font-bold bg-white text-slate-800">Clean White</button>
+            <button onclick="setThemePreset('#f8fafc', '#0f172a', '#ffffff', '#2563eb')" class="p-2 rounded-lg border border-slate-300 text-xs font-bold bg-slate-100 text-slate-800">Slate Blue</button>
+            <button onclick="setThemePreset('#0f172a', '#f8fafc', '#1e293b', '#38bdf8')" class="p-2 rounded-lg border border-slate-700 text-xs font-bold bg-slate-900 text-white">NOC Dark</button>
+            <button onclick="setThemePreset('#fef2f2', '#450a0a', '#ffffff', '#991b1b')" class="p-2 rounded-lg border border-red-200 text-xs font-bold bg-red-50 text-red-900">Warm Maroon</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-6">
+        <button onclick="resetThemeDefaults()" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-600">Reset Defaults</button>
+        <button onclick="closeColorModal()" class="flex-1 py-2.5 rounded-xl btn-maroon text-xs font-bold">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Attendance & Separation Rules Modal -->
+  <div class="modal-backdrop" id="roster-modal">
+    <div class="bg-white rounded-2xl p-6 w-[560px] max-w-[94vw] shadow-2xl border border-slate-200 text-slate-900 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+        <div>
+          <h3 class="text-lg font-black"><span class="current-block-label">Block 1</span> Attendance &amp; Separation Rules</h3>
+          <p class="text-xs text-slate-500 font-semibold">Toggle attendance and establish "Do Not Pair" constraints</p>
+        </div>
+        <button onclick="closeRosterModal()" class="text-slate-400 font-black text-xl hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-xs font-black text-slate-600 uppercase tracking-wider">Attendance for <span class="current-block-label">Block 1</span> (<span id="modal-roster-count">0</span>)</label>
+          <a href="index.html" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-md transition-colors">
+            Edit Roster on Main Hub &rarr;
+          </a>
+        </div>
+        <div id="modal-roster-list" class="max-h-48 overflow-y-auto space-y-1.5 p-2 bg-slate-50 rounded-xl border border-slate-200"></div>
+      </div>
+
+      <div class="border-t border-slate-200 pt-4">
+        <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">&#128683; "Do Not Pair" Separation Rules</label>
+        <p class="text-xs text-slate-500 mb-2">The system will prevent these two students from being placed into the same group.</p>
+
+        <div class="flex flex-wrap sm:flex-nowrap gap-2 mb-3">
+          <select id="pair-student-a" class="flex-1 p-2 text-xs font-bold rounded-lg border border-slate-300 bg-white"></select>
+          <span class="self-center font-bold text-xs text-slate-400">&ne;</span>
+          <select id="pair-student-b" class="flex-1 p-2 text-xs font-bold rounded-lg border border-slate-300 bg-white"></select>
+          <button onclick="addSeparationRule()" class="px-3 py-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-800 font-bold text-xs active:bg-slate-200">Add Rule</button>
+        </div>
+
+        <div id="separation-rules-list" class="space-y-1 max-h-36 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200"></div>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button onclick="closeRosterModal()" class="px-5 py-2.5 rounded-xl btn-maroon font-bold text-xs">Close &amp; Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reassign Tap Modal (iPad touch fallback) -->
+  <div class="modal-backdrop" id="move-modal">
+    <div class="bg-white rounded-2xl p-5 w-[320px] max-w-[90vw] shadow-2xl border border-slate-200 text-slate-900">
+      <h3 class="text-base font-black mb-1">Move Student</h3>
+      <p class="text-xs text-slate-500 font-semibold mb-3">Move <span id="move-student-name" class="font-extrabold text-slate-900"></span> to:</p>
+      <div id="move-options-list" class="space-y-1.5 max-h-56 overflow-y-auto"></div>
+      <button onclick="closeMoveModal()" class="w-full mt-4 py-2 rounded-xl border border-slate-300 font-bold text-xs text-slate-600">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Export / Share Choice Modal -->
+  <div class="modal-backdrop" id="export-modal">
+    <div class="bg-white rounded-2xl p-6 w-[440px] max-w-[92vw] shadow-2xl border border-slate-200 text-slate-900">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+        <div>
+          <h3 class="text-lg font-black">&#128229; Export &amp; Share Groups</h3>
+          <p class="text-xs text-slate-500 font-semibold">Choose format for <span class="current-block-label">Block 1</span></p>
+        </div>
+        <button onclick="closeExportModal()" class="text-slate-400 font-black text-xl hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="space-y-3">
+        <button onclick="exportAsTextFile()" class="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between font-bold text-xs sm:text-sm text-slate-800 active:scale-98">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">&#128196;</span>
+            <div class="text-left">
+              <div>Download as Text (.txt)</div>
+              <div class="text-[11px] text-slate-500 font-normal">Clean list format including student order &amp; roles</div>
+            </div>
+          </div>
+          <span class="text-slate-400">&rarr;</span>
+        </button>
+
+        <button onclick="exportAsImageFile()" class="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between font-bold text-xs sm:text-sm text-slate-800 active:scale-98">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">&#128444;</span>
+            <div class="text-left">
+              <div>Download as Image (.png)</div>
+              <div class="text-[11px] text-slate-500 font-normal">Color-coded banner graphic snapshot</div>
+            </div>
+          </div>
+          <span class="text-slate-400">&rarr;</span>
+        </button>
+
+        <button onclick="printClassGroups()" class="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between font-bold text-xs sm:text-sm text-slate-800 active:scale-98">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">&#128424;</span>
+            <div class="text-left">
+              <div>Print Groups</div>
+              <div class="text-[11px] text-slate-500 font-normal">Send directly to AirPrint or network printer</div>
+            </div>
+          </div>
+          <span class="text-slate-400">&rarr;</span>
+        </button>
+
+        <button onclick="emailClassGroups()" class="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between font-bold text-xs sm:text-sm text-slate-800 active:scale-98">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">&#9993;</span>
+            <div class="text-left">
+              <div>Email Groups</div>
+              <div class="text-[11px] text-slate-500 font-normal">Opens mail client with pre-formatted list</div>
+            </div>
+          </div>
+          <span class="text-slate-400">&rarr;</span>
+        </button>
+      </div>
+
+      <button onclick="closeExportModal()" class="w-full mt-4 py-2.5 rounded-xl border border-slate-300 font-bold text-xs text-slate-600">Close</button>
+    </div>
+  </div>
+
+  <canvas id="export-canvas" style="display:none;"></canvas>
+
+  <script>
+    const DEFAULT_PASSCODE = '0000';
+
+    // State Architecture: Groups start clean and empty by default
+    const APP_STATE = {
+      isTeacherUnlocked: false,
+      activeBlock: 1,
+      enteredPin: '',
+      passcode: DEFAULT_PASSCODE,
+      theme: {
+        bg: '#ffffff',
+        font: '#0f172a',
+        card: '#ffffff',
+        accent: '#701c2e'
+      },
+      blocks: {
+        1: { strategy: 'size', target: 3, naming: 'numbers', mode: 'auto', sortMode: 'manual', roster: [], doNotPair: [], groups: [], enableJobs: false, jobs: ['Lead Facilitator', 'Lead Researcher', 'Recorder', 'Materials Mgr'], memberJobs: {} },
+        2: { strategy: 'size', target: 3, naming: 'numbers', mode: 'auto', sortMode: 'manual', roster: [], doNotPair: [], groups: [], enableJobs: false, jobs: ['Lead Facilitator', 'Lead Researcher', 'Recorder', 'Materials Mgr'], memberJobs: {} },
+        3: { strategy: 'size', target: 3, naming: 'numbers', mode: 'auto', sortMode: 'manual', roster: [], doNotPair: [], groups: [], enableJobs: false, jobs: ['Lead Facilitator', 'Lead Researcher', 'Recorder', 'Materials Mgr'], memberJobs: {} },
+        4: { strategy: 'size', target: 3, naming: 'numbers', mode: 'auto', sortMode: 'manual', roster: [], doNotPair: [], groups: [], enableJobs: false, jobs: ['Lead Facilitator', 'Lead Researcher', 'Recorder', 'Materials Mgr'], memberJobs: {} },
+        5: { strategy: 'size', target: 3, naming: 'numbers', mode: 'auto', sortMode: 'manual', roster: [], doNotPair: [], groups: [], enableJobs: false, jobs: ['Lead Facilitator', 'Lead Researcher', 'Recorder', 'Materials Mgr'], memberJobs: {} }
+      }
+    };
+
+    let movingStudentId = null;
+    let draggedStudentId = null;
+
+    const DEFAULT_BANNER_PALETTE = [
+      '#701c2e', // Collierville Maroon
+      '#1e3a8a', // Deep Cobalt
+      '#065f46', // Emerald Green
+      '#7c2d12', // Warm Amber
+      '#581c87', // Royal Violet
+      '#0e7490', // Ocean Cyan
+      '#334155', // Slate Slate
+      '#831843'  // Ruby Pink
+    ];
+
+    /* INGEST ROSTERS AND CONFIGURATION FROM MAIN LANDING HUB */
+    function loadLandingPageConfiguration() {
+      // 1. Ingest Passcode
+      const hubPin = localStorage.getItem('pass_tracker_pin_v9') || localStorage.getItem('cls_group_maker_pin');
+      APP_STATE.passcode = hubPin || DEFAULT_PASSCODE;
+
+      // 2. Ingest Rosters from Landing Hub
+      const hubRostersRaw = localStorage.getItem('pass_tracker_rosters_v9');
+      if (hubRostersRaw) {
+        try {
+          const hubRosters = JSON.parse(hubRostersRaw);
+          for (let b = 1; b <= 5; b++) {
+            const blockKey = `Block ${b}`;
+            const studentNames = hubRosters[blockKey] || [];
+            
+            const currentBlockState = APP_STATE.blocks[b];
+            const currentMap = new Map((currentBlockState.roster || []).map(s => [s.name.toLowerCase().trim(), s]));
+
+            // Update roster array directly from landing hub
+            currentBlockState.roster = studentNames.map((name, i) => {
+              const cleaned = name.trim();
+              const existing = currentMap.get(cleaned.toLowerCase());
+              if (existing) {
+                return existing;
+              }
+              return {
+                id: `s_${b}_${i}_${cleaned.replace(/\s+/g, '_')}`,
+                name: cleaned,
+                active: true
+              };
+            });
+          }
+        } catch (e) {
+          console.warn('Could not parse landing page rosters:', e);
+        }
+      }
+
+      // 3. Ingest Theme Preferences
+      const hubTheme = localStorage.getItem('cls_group_maker_theme');
+      if (hubTheme) {
+        try {
+          APP_STATE.theme = JSON.parse(hubTheme);
+        } catch (e) {}
+      }
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem('cls_group_maker_data');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          for (let b = 1; b <= 5; b++) {
+            if (parsed.blocks && parsed.blocks[b]) {
+              APP_STATE.blocks[b] = {
+                ...APP_STATE.blocks[b],
+                ...parsed.blocks[b],
+                sortMode: parsed.blocks[b].sortMode || 'manual',
+                jobs: parsed.blocks[b].jobs || ['Lead Facilitator', 'Lead Researcher', 'Recorder', 'Materials Mgr'],
+                enableJobs: !!parsed.blocks[b].enableJobs,
+                memberJobs: parsed.blocks[b].memberJobs || {},
+                groups: Array.isArray(parsed.blocks[b].groups) ? parsed.blocks[b].groups : []
+              };
+
+              if (APP_STATE.blocks[b].groups) {
+                APP_STATE.blocks[b].groups.forEach((grp, idx) => {
+                  if (!grp.bannerColor) {
+                    grp.bannerColor = DEFAULT_BANNER_PALETTE[idx % DEFAULT_BANNER_PALETTE.length];
+                  }
+                });
+              }
+            }
+          }
+          APP_STATE.activeBlock = parsed.activeBlock || 1;
+        } catch(e) {
+          console.error('State parse error', e);
+        }
+      }
+
+      // Ingest rosters from landing page
+      loadLandingPageConfiguration();
+      applyTheme();
+    }
+
+    function saveState() {
+      localStorage.setItem('cls_group_maker_data', JSON.stringify({
+        blocks: APP_STATE.blocks,
+        activeBlock: APP_STATE.activeBlock
+      }));
+    }
+
+    // THEME HANDLING
+    function applyTheme() {
+      document.documentElement.style.setProperty('--bg-color', APP_STATE.theme.bg);
+      document.documentElement.style.setProperty('--text-color', APP_STATE.theme.font);
+      document.documentElement.style.setProperty('--card-bg', APP_STATE.theme.card);
+      document.documentElement.style.setProperty('--accent-color', APP_STATE.theme.accent);
+
+      document.getElementById('bg-color-picker').value = APP_STATE.theme.bg;
+      document.getElementById('font-color-picker').value = APP_STATE.theme.font;
+      document.getElementById('card-color-picker').value = APP_STATE.theme.card;
+      document.getElementById('accent-color-picker').value = APP_STATE.theme.accent;
+    }
+
+    function applyBgColor(val) { APP_STATE.theme.bg = val; applyTheme(); saveTheme(); }
+    function applyFontColor(val) { APP_STATE.theme.font = val; applyTheme(); saveTheme(); }
+    function applyCardColor(val) { APP_STATE.theme.card = val; applyTheme(); saveTheme(); }
+    function applyAccentColor(val) { APP_STATE.theme.accent = val; applyTheme(); saveTheme(); }
+
+    function setThemePreset(bg, font, card, accent) {
+      APP_STATE.theme = { bg, font, card, accent };
+      applyTheme();
+      saveTheme();
+    }
+
+    function resetThemeDefaults() {
+      APP_STATE.theme = { bg: '#ffffff', font: '#0f172a', card: '#ffffff', accent: '#701c2e' };
+      applyTheme();
+      saveTheme();
+    }
+
+    function saveTheme() {
+      localStorage.setItem('cls_group_maker_theme', JSON.stringify(APP_STATE.theme));
+    }
+
+    // SECURITY & PASSCODE MANAGEMENT
+    function handleAuthAction() {
+      if (APP_STATE.isTeacherUnlocked) {
+        lockTeacherMode();
+      } else {
+        openKeypad();
+      }
+    }
+
+    function openKeypad() {
+      APP_STATE.enteredPin = '';
+      renderPinDots();
+      document.getElementById('keypad-modal').classList.add('active');
+    }
+
+    function closeKeypad() {
+      document.getElementById('keypad-modal').classList.remove('active');
+      APP_STATE.enteredPin = '';
+    }
+
+    function renderPinDots() {
+      const container = document.getElementById('pin-dots-container');
+      const targetLen = APP_STATE.passcode.length || 4;
+      let html = '';
+      for (let i = 0; i < targetLen; i++) {
+        if (i < APP_STATE.enteredPin.length) {
+          html += '<div class="w-4 h-4 rounded-full bg-slate-900 border-2 border-slate-900 transition-all"></div>';
+        } else {
+          html += '<div class="w-4 h-4 rounded-full border-2 border-slate-300 transition-all"></div>';
+        }
+      }
+      container.innerHTML = html;
+    }
+
+    function pressKey(num) {
+      const maxLen = APP_STATE.passcode.length;
+      if (APP_STATE.enteredPin.length < maxLen) {
+        APP_STATE.enteredPin += num;
+        renderPinDots();
+        if (APP_STATE.enteredPin.length === maxLen) {
+          setTimeout(verifyPin, 150);
+        }
+      }
+    }
+
+    function pressClear() {
+      APP_STATE.enteredPin = '';
+      renderPinDots();
+    }
+
+    function verifyPin() {
+      if (APP_STATE.enteredPin === APP_STATE.passcode) {
+        unlockTeacherMode();
+        closeKeypad();
+      } else {
+        const box = document.getElementById('keypad-box');
+        box.classList.add('shake');
+        setTimeout(() => {
+          box.classList.remove('shake');
+          pressClear();
+        }, 400);
+      }
+    }
+
+    function unlockTeacherMode() {
+      APP_STATE.isTeacherUnlocked = true;
+      document.getElementById('teacher-panel').classList.remove('hidden');
+      document.getElementById('lock-badge').className = 'text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1';
+      document.getElementById('lock-badge').innerHTML = '<span>&#128273;</span> Teacher Mode Unlocked';
+      document.getElementById('auth-icon').innerHTML = '&#128271;';
+      document.getElementById('auth-label').textContent = 'Lock Mode';
+      renderView();
+    }
+
+    function lockTeacherMode() {
+      APP_STATE.isTeacherUnlocked = false;
+      document.getElementById('teacher-panel').classList.add('hidden');
+      document.getElementById('lock-badge').className = 'text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1';
+      document.getElementById('lock-badge').innerHTML = '<span>&#128274;</span> Student Display View';
+      document.getElementById('auth-icon').innerHTML = '&#128274;';
+      document.getElementById('auth-label').textContent = 'Teacher Options';
+      renderView();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('keypad-modal');
+      if (modal.classList.contains('active')) {
+        if (e.key >= '0' && e.key <= '9') {
+          pressKey(e.key);
+        } else if (e.key === 'Backspace') {
+          pressClear();
+        } else if (e.key === 'Escape') {
+          closeKeypad();
+        }
+      }
+    });
+
+    // BLOCK SWITCHING
+    function switchBlock(blockNum) {
+      APP_STATE.activeBlock = blockNum;
+      saveState();
+      renderTabs();
+      renderTeacherPanelValues();
+      renderView();
+    }
+
+    function renderTabs() {
+      for (let b = 1; b <= 5; b++) {
+        const tab = document.getElementById(`tab-b${b}`);
+        if (b === APP_STATE.activeBlock) {
+          tab.style.backgroundColor = 'var(--accent-color)';
+          tab.style.color = '#ffffff';
+          tab.style.borderColor = 'var(--accent-color)';
+        } else {
+          tab.style.backgroundColor = 'transparent';
+          tab.style.color = 'var(--text-color)';
+          tab.style.borderColor = 'var(--border-color)';
+        }
+      }
+      document.querySelectorAll('.current-block-label').forEach(el => el.textContent = `Block ${APP_STATE.activeBlock}`);
+      document.getElementById('display-block-heading').textContent = `Block ${APP_STATE.activeBlock} Groups`;
+      document.getElementById('panel-block-title').textContent = `Block ${APP_STATE.activeBlock}`;
+    }
+
+    function renderTeacherPanelValues() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      document.getElementById('group-strategy').value = block.strategy;
+      document.getElementById('group-target').value = block.target;
+      document.getElementById('group-naming').value = block.naming;
+      document.getElementById('enable-jobs-checkbox').checked = !!block.enableJobs;
+      document.getElementById('sort-selector').value = block.sortMode || 'manual';
+      setGroupingType(block.mode, false);
+    }
+
+    function updateBlockStrategy(val) {
+      APP_STATE.blocks[APP_STATE.activeBlock].strategy = val;
+      saveState();
+    }
+
+    function updateBlockTarget(val) {
+      APP_STATE.blocks[APP_STATE.activeBlock].target = Math.max(1, parseInt(val, 10) || 2);
+      saveState();
+    }
+
+    function updateBlockNaming(val) {
+      APP_STATE.blocks[APP_STATE.activeBlock].naming = val;
+      saveState();
+    }
+
+    function setGroupingType(type, persist = true) {
+      APP_STATE.blocks[APP_STATE.activeBlock].mode = type;
+      const autoBtn = document.getElementById('mode-auto-btn');
+      const manualBtn = document.getElementById('mode-manual-btn');
+      const autoFields = document.getElementById('auto-config-fields');
+
+      if (type === 'auto') {
+        autoBtn.className = 'py-2 text-xs font-black rounded-lg border text-center transition-all bg-white border-slate-300 shadow-sm text-slate-800';
+        manualBtn.className = 'py-2 text-xs font-black rounded-lg border text-center transition-all bg-transparent text-slate-500 border-transparent';
+        autoFields.classList.remove('hidden');
+      } else {
+        manualBtn.className = 'py-2 text-xs font-black rounded-lg border text-center transition-all bg-white border-slate-300 shadow-sm text-slate-800';
+        autoBtn.className = 'py-2 text-xs font-black rounded-lg border text-center transition-all bg-transparent text-slate-500 border-transparent';
+        autoFields.classList.add('hidden');
+      }
+      if (persist) saveState();
+      renderView();
+    }
+
+    // TEAM JOBS / ROLES FEATURE
+    function toggleTeamJobs(enabled) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      block.enableJobs = enabled;
+
+      if (enabled && (!block.jobs || block.jobs.length === 0)) {
+        block.jobs = ['Lead Facilitator', 'Lead Researcher', 'Recorder', 'Materials Mgr'];
+      }
+
+      saveState();
+      renderView();
+    }
+
+    function openJobsModal() {
+      renderModalJobsList();
+      document.getElementById('jobs-modal').classList.add('active');
+    }
+
+    function closeJobsModal() {
+      document.getElementById('jobs-modal').classList.remove('active');
+      renderView();
+    }
+
+    function renderModalJobsList() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const list = document.getElementById('modal-jobs-list');
+      document.getElementById('modal-jobs-count').textContent = block.jobs.length;
+
+      if (block.jobs.length === 0) {
+        list.innerHTML = '<div class="text-xs text-slate-400 py-3 text-center">No custom jobs created for this block.</div>';
+        return;
+      }
+
+      list.innerHTML = block.jobs.map((job, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400">#${idx + 1}</span>
+            <input type="text" value="${escapeHtml(job)}" onchange="updateJobTitle(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-300 text-xs font-bold focus:outline-none focus:border-slate-800 px-1" />
+          </div>
+          <button onclick="deleteJobRole(${idx})" class="text-slate-400 hover:text-red-500 font-bold px-1.5">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function addCustomJob() {
+      const input = document.getElementById('new-job-title');
+      const val = input.value.trim();
+      if (!val) return;
+
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      if (!block.jobs) block.jobs = [];
+      block.jobs.push(val);
+      input.value = '';
+      saveState();
+      renderModalJobsList();
+    }
+
+    function updateJobTitle(idx, newTitle) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const val = newTitle.trim();
+      if (val) {
+        block.jobs[idx] = val;
+        saveState();
+      }
+    }
+
+    function deleteJobRole(idx) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      block.jobs.splice(idx, 1);
+      saveState();
+      renderModalJobsList();
+    }
+
+    function loadJobPreset(preset) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      if (preset === 'standard') {
+        block.jobs = ['Lead Facilitator', 'Lead Researcher', 'Recorder', 'Materials Mgr'];
+      } else if (preset === 'techops') {
+        block.jobs = ['Lead Systems Engineer', 'QA Tester', 'Security Auditor', 'Documentarian'];
+      } else if (preset === 'clear') {
+        block.jobs = [];
+      }
+      saveState();
+      renderModalJobsList();
+    }
+
+    function assignStudentJob(studentId, jobName) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      if (!block.memberJobs) block.memberJobs = {};
+      if (!jobName) {
+        delete block.memberJobs[studentId];
+      } else {
+        block.memberJobs[studentId] = jobName;
+      }
+      saveState();
+      renderView();
+    }
+
+    // STRICT SORTING
+    function handleSortSelection(val) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      block.sortMode = val;
+
+      if (val === 'alpha-first') {
+        sortStudentsByFirstOrLast(false);
+      } else if (val === 'alpha-last') {
+        sortStudentsByFirstOrLast(true);
+      }
+
+      saveState();
+      renderView();
+    }
+
+    function sortStudentsByFirstOrLast(byLastName) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      if (block.groups.length === 0) return;
+
+      block.groups.forEach(grp => {
+        grp.studentIds.sort((idA, idB) => {
+          const studentA = block.roster.find(s => s.id === idA);
+          const studentB = block.roster.find(s => s.id === idB);
+          const nameA = studentA ? studentA.name.trim() : '';
+          const nameB = studentB ? studentB.name.trim() : '';
+
+          if (byLastName) {
+            const partsA = nameA.split(/\s+/);
+            const partsB = nameB.split(/\s+/);
+            const lastA = partsA.length > 1 ? partsA[partsA.length - 1] : partsA[0];
+            const lastB = partsB.length > 1 ? partsB[partsB.length - 1] : partsB[0];
+            const comp = lastA.localeCompare(lastB, undefined, { sensitivity: 'base' });
+            if (comp !== 0) return comp;
+          }
+          return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+        });
+      });
+    }
+
+    function updateGroupBannerColor(groupId, colorHex) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const grp = block.groups.find(g => g.id === groupId);
+      if (grp) {
+        grp.bannerColor = colorHex;
+        saveState();
+        renderView();
+      }
+    }
+
+    function getBannerTextColor(hexColor) {
+      if (!hexColor || hexColor.length < 6) return '#ffffff';
+      const c = hexColor.replace('#', '');
+      const r = parseInt(c.substring(0, 2), 16) || 0;
+      const g = parseInt(c.substring(2, 4), 16) || 0;
+      const b = parseInt(c.substring(4, 6), 16) || 0;
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+      return (yiq >= 150) ? '#0f172a' : '#ffffff';
+    }
+
+    // AUTO-GROUP FORMATION
+    function generateGroups() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const activeStudents = block.roster.filter(s => s.active);
+
+      if (activeStudents.length === 0) {
+        alert('Please ensure students are loaded from the landing page before generating groups.');
+        return;
+      }
+
+      let numGroups = 1;
+      if (block.strategy === 'size') {
+        const groupSize = Math.max(1, parseInt(block.target, 10) || 3);
+        numGroups = Math.max(1, Math.ceil(activeStudents.length / groupSize));
+      } else {
+        numGroups = Math.min(activeStudents.length, Math.max(1, parseInt(block.target, 10) || 2));
+      }
+
+      let bestAllocation = null;
+      let minConflicts = 999;
+
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const shuffled = [...activeStudents].sort(() => Math.random() - 0.5);
+        const buckets = Array.from({ length: numGroups }, () => []);
+
+        shuffled.forEach((student, index) => {
+          buckets[index % numGroups].push(student);
+        });
+
+        let conflicts = 0;
+        buckets.forEach(grp => {
+          const ids = new Set(grp.map(s => s.id));
+          block.doNotPair.forEach(rule => {
+            if (ids.has(rule.studentA) && ids.has(rule.studentB)) {
+              conflicts++;
+            }
+          });
+        });
+
+        if (conflicts < minConflicts) {
+          minConflicts = conflicts;
+          bestAllocation = buckets;
+          if (conflicts === 0) break;
+        }
+      }
+
+      const names = getGroupNames(block.naming, numGroups);
+      block.groups = bestAllocation.map((memberArray, idx) => ({
+        id: `grp_${Date.now()}_${idx}`,
+        name: names[idx] || `Group ${idx + 1}`,
+        bannerColor: DEFAULT_BANNER_PALETTE[idx % DEFAULT_BANNER_PALETTE.length],
+        studentIds: memberArray.map(m => m.id)
+      }));
+
+      if (block.sortMode === 'alpha-first') {
+        sortStudentsByFirstOrLast(false);
+      } else if (block.sortMode === 'alpha-last') {
+        sortStudentsByFirstOrLast(true);
+      }
+
+      if (block.enableJobs && block.jobs && block.jobs.length > 0) {
+        if (!block.memberJobs) block.memberJobs = {};
+        block.groups.forEach(g => {
+          g.studentIds.forEach((sid, mIdx) => {
+            block.memberJobs[sid] = block.jobs[mIdx % block.jobs.length];
+          });
+        });
+      }
+
+      saveState();
+      renderView();
+
+      if (minConflicts > 0) {
+        alert(`Note: Could not completely separate all flagged pairs with ${numGroups} groups. There are ${minConflicts} unavoidable conflict(s). Try increasing group count.`);
+      }
+    }
+
+    function getGroupNames(scheme, count) {
+      const palettes = {
+        numbers: Array.from({length: count}, (_, i) => `Group ${i + 1}`),
+        colors: ['Crimson Team', 'Navy Team', 'Cobalt Team', 'Emerald Team', 'Amber Team', 'Purple Team', 'Slate Team', 'Teal Team', 'Gold Team', 'Bronze Team'],
+        tech: ['Cyber Ops', 'Data Sentinel', 'Alpha Pod', 'Firewall Grid', 'Kernel Squad', 'Matrix Core', 'Packet Patrol', 'Zero Trust'],
+        nato: ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India', 'Juliet', 'Kilo', 'Lima']
+      };
+
+      const base = palettes[scheme] || palettes.numbers;
+      const res = [];
+      for (let i = 0; i < count; i++) {
+        res.push(base[i] || `Group ${i + 1}`);
+      }
+      return res;
+    }
+
+    function addEmptyGroup() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const nextIndex = block.groups.length + 1;
+      block.groups.push({
+        id: `grp_${Date.now()}`,
+        name: `Group ${nextIndex}`,
+        bannerColor: DEFAULT_BANNER_PALETTE[(nextIndex - 1) % DEFAULT_BANNER_PALETTE.length],
+        studentIds: []
+      });
+      saveState();
+      renderView();
+    }
+
+    function deleteGroup(groupId) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      block.groups = block.groups.filter(g => g.id !== groupId);
+      saveState();
+      renderView();
+    }
+
+    function clearCurrentGroups() {
+      if (confirm(`Reset all groups for Block ${APP_STATE.activeBlock}? All students will return to unassigned.`)) {
+        APP_STATE.blocks[APP_STATE.activeBlock].groups = [];
+        saveState();
+        renderView();
+      }
+    }
+
+    // MAIN RENDER ENGINE
+    function renderView() {
+      renderTabs();
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const activeRoster = block.roster.filter(s => s.active);
+      document.getElementById('active-roster-pill').textContent = `${activeRoster.length} Active (${block.roster.length} Total)`;
+
+      const jobsIndicator = document.getElementById('active-jobs-indicator');
+      if (block.enableJobs) {
+        jobsIndicator.classList.remove('hidden');
+      } else {
+        jobsIndicator.classList.add('hidden');
+      }
+
+      const assignedStudentIds = new Set();
+      block.groups.forEach(g => g.studentIds.forEach(id => assignedStudentIds.add(id)));
+
+      const unassignedStudents = activeRoster.filter(s => !assignedStudentIds.has(s.id));
+      const unassignedSection = document.getElementById('unassigned-container');
+      const unassignedList = document.getElementById('unassigned-roster');
+      const unassignedCount = document.getElementById('unassigned-count');
+
+      // Unassigned student pool appears if there are active groups OR teacher is logged in with unassigned members
+      if (unassignedStudents.length > 0 && (APP_STATE.isTeacherUnlocked || block.groups.length > 0)) {
+        unassignedSection.classList.remove('hidden');
+        unassignedCount.textContent = unassignedStudents.length;
+        unassignedList.innerHTML = unassignedStudents.map(s => `
+          <div draggable="${APP_STATE.isTeacherUnlocked}" ondragstart="handleDragStart(event, '${s.id}')" onclick="openMoveModal('${s.id}')" class="student-pill px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-xs font-bold shadow-sm flex items-center gap-1.5 active:scale-95">
+            <span>&#128100;</span>
+            <span>${escapeHtml(s.name)}</span>
+            <span class="text-[10px] text-amber-600 font-extrabold">&#8595;</span>
+          </div>
+        `).join('');
+      } else {
+        unassignedSection.classList.add('hidden');
+      }
+
+      let totalConflicts = 0;
+      block.groups.forEach(grp => {
+        const idSet = new Set(grp.studentIds);
+        block.doNotPair.forEach(r => {
+          if (idSet.has(r.studentA) && idSet.has(r.studentB)) {
+            totalConflicts++;
+          }
+        });
+      });
+
+      const conflictBadge = document.getElementById('conflict-warning-badge');
+      if (totalConflicts > 0) {
+        conflictBadge.innerHTML = `<span class="px-2.5 py-1 bg-red-100 text-red-700 rounded-md font-bold">&#9888; ${totalConflicts} Separation Rule Conflict(s)</span>`;
+      } else {
+        conflictBadge.innerHTML = '';
+      }
+
+      const grid = document.getElementById('groups-grid');
+      const emptyState = document.getElementById('empty-state');
+
+      // Empty state if no groups exist
+      if (block.groups.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      grid.innerHTML = block.groups.map((group, groupIndex) => {
+        const members = group.studentIds.map(id => block.roster.find(s => s.id === id)).filter(Boolean);
+        const bannerColor = group.bannerColor || DEFAULT_BANNER_PALETTE[groupIndex % DEFAULT_BANNER_PALETTE.length];
+        const textColor = getBannerTextColor(bannerColor);
+
+        return `
+          <div class="custom-card rounded-2xl shadow-sm border overflow-hidden flex flex-col justify-between transition-all">
+            <div>
+              <div class="group-banner px-4 py-3 flex items-center justify-between shadow-sm" style="background-color: ${bannerColor}; color: ${textColor};">
+                <div class="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                  ${APP_STATE.isTeacherUnlocked ? `
+                    <input type="text" value="${escapeHtml(group.name)}" onchange="renameGroup('${group.id}', this.value)" class="text-sm font-black bg-transparent border-b border-dashed border-white/50 focus:outline-none focus:border-white w-full" style="color: ${textColor};" />
+                  ` : `
+                    <h4 class="text-sm font-black tracking-tight truncate">${escapeHtml(group.name)}</h4>
+                  `}
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  ${APP_STATE.isTeacherUnlocked ? `
+                    <label title="Change Banner Color" class="relative cursor-pointer flex items-center justify-center w-6 h-6 rounded-full border border-white/40 shadow-inner bg-white/20 hover:bg-white/30">
+                      <span class="text-[10px]">&#127912;</span>
+                      <input type="color" value="${bannerColor}" onchange="updateGroupBannerColor('${group.id}', this.value)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                    </label>
+                  ` : ''}
+
+                  <span class="text-xs font-black px-2 py-0.5 rounded-md bg-black/20 backdrop-blur-xs" style="color: ${textColor};">${members.length}</span>
+
+                  ${APP_STATE.isTeacherUnlocked ? `
+                    <button onclick="deleteGroup('${group.id}')" title="Delete Group" class="text-white/70 hover:text-white font-bold text-xs p-1 ml-0.5">&times;</button>
+                  ` : ''}
+                </div>
+              </div>
+
+              <div class="p-3.5 space-y-2 min-h-[70px]" ondragover="allowDrop(event)" ondrop="handleDrop(event, '${group.id}', -1)">
+                ${members.length === 0 ? `
+                  <div class="text-[11px] text-slate-400 italic py-4 text-center border border-dashed border-slate-200 rounded-lg">Drop students here</div>
+                ` : members.map((m, posIndex) => {
+                  const assignedRole = (block.enableJobs && block.memberJobs && block.memberJobs[m.id]) ? block.memberJobs[m.id] : '';
+
+                  return `
+                    <div
+                      draggable="${APP_STATE.isTeacherUnlocked}"
+                      ondragstart="handleDragStart(event, '${m.id}')"
+                      ondragover="handleStudentDragOver(event)"
+                      ondragleave="handleStudentDragLeave(event)"
+                      ondrop="handleStudentDrop(event, '${group.id}',${posIndex})"
+                      class="student-pill flex flex-col gap-1 p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold transition-all hover:border-slate-300">
+
+                      <div class="flex items-center justify-between">
+                        <span class="flex items-center gap-1.5 truncate">
+                          <span class="text-slate-400 font-mono text-[10px] select-none">${posIndex + 1}.</span>
+                          <span class="text-slate-800 truncate">${escapeHtml(m.name)}</span>
+                        </span>
+                        ${APP_STATE.isTeacherUnlocked ? `
+                          <button onclick="openMoveModal('${m.id}')" class="text-[11px] text-slate-500 bg-white border border-slate-300 px-1.5 py-0.5 rounded font-bold hover:bg-slate-100 active:scale-90 flex-shrink-0">Move</button>
+                        ` : ''}
+                      </div>
+
+                      ${block.enableJobs ? `
+                        <div class="mt-0.5 flex items-center justify-between text-[11px]">
+                          ${APP_STATE.isTeacherUnlocked ? `
+                            <select onchange="assignStudentJob('${m.id}', this.value)" class="w-full text-[11px] p-1 bg-white border border-purple-200 rounded text-purple-900 font-semibold cursor-pointer">
+                              <option value="">-- No Job Assigned --</option>
+                              ${block.jobs.map(j => `<option value="${escapeHtml(j)}" ${assignedRole === j ? 'selected' : ''}>${escapeHtml(j)}</option>`).join('')}
+                            </select>
+                          ` : (assignedRole ? `
+                            <span class="px-2 py-0.5 rounded bg-purple-50 text-purple-800 font-bold border border-purple-200 text-[10px] uppercase tracking-wider flex items-center gap-1">
+                              <span>&#128188;</span> ${escapeHtml(assignedRole)}
+                            </span>
+                          ` : '')}
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            ${APP_STATE.isTeacherUnlocked ? `
+              <div class="px-3.5 py-2 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                <span>Drag to insert at exact spot</span>
+                <span>${block.sortMode === 'manual' ? 'Manual Sort Active' : 'Sorted Alphabetically'}</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renameGroup(groupId, newName) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const g = block.groups.find(x => x.id === groupId);
+      if (g) {
+        g.name = newName.trim() || 'Unnamed Group';
+        saveState();
+      }
+    }
+
+    // POSITION-SPECIFIC DRAG AND DROP
+    function handleDragStart(e, studentId) {
+      draggedStudentId = studentId;
+      e.stopPropagation();
+      e.dataTransfer.setData('text/plain', studentId);
+      e.currentTarget.classList.add('dragging');
+    }
+
+    function allowDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleStudentDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.classList.add('student-insert-indicator');
+    }
+
+    function handleStudentDragLeave(e) {
+      e.stopPropagation();
+      e.currentTarget.classList.remove('student-insert-indicator');
+    }
+
+    function handleStudentDrop(e, targetGroupId, targetPosIndex) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.classList.remove('student-insert-indicator');
+
+      const studentId = e.dataTransfer.getData('text/plain') || draggedStudentId;
+      if (!studentId) return;
+
+      reassignStudent(studentId, targetGroupId, targetPosIndex);
+    }
+
+    function handleDrop(e, targetGroupId, targetPosIndex) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.classList.remove('drag-over');
+
+      const studentId = e.dataTransfer.getData('text/plain') || draggedStudentId;
+      if (!studentId) return;
+
+      reassignStudent(studentId, targetGroupId, targetPosIndex);
+    }
+
+    document.addEventListener('dragend', () => {
+      draggedStudentId = null;
+      document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+      document.querySelectorAll('.student-insert-indicator').forEach(el => el.classList.remove('student-insert-indicator'));
+      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    });
+
+    function openMoveModal(studentId) {
+      if (!APP_STATE.isTeacherUnlocked) return;
+      movingStudentId = studentId;
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const student = block.roster.find(s => s.id === studentId);
+      if (!student) return;
+
+      document.getElementById('move-student-name').textContent = student.name;
+      const list = document.getElementById('move-options-list');
+
+      let optionsHtml = `
+        <button onclick="reassignStudent('${studentId}', -1, -1); closeMoveModal();" class="w-full text-left p-2.5 rounded-xl border border-amber-300 bg-amber-50 font-bold text-xs text-amber-800 flex items-center justify-between active:scale-98">
+          <span>&#128101; Unassigned Pool</span>
+          <span>&rarr;</span>
+        </button>
+      `;
+
+      optionsHtml += block.groups.map(g => `
+        <button onclick="reassignStudent('${studentId}', '${g.id}', -1); closeMoveModal();" class="w-full text-left p-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-xs text-slate-700 flex items-center justify-between active:scale-98">
+          <span class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${g.bannerColor || '#701c2e'}"></span>
+            ${escapeHtml(g.name)}
+          </span>
+          <span class="text-slate-400">&rarr;</span>
+        </button>
+      `).join('');
+
+      list.innerHTML = optionsHtml;
+      document.getElementById('move-modal').classList.add('active');
+    }
+
+    function closeMoveModal() {
+      document.getElementById('move-modal').classList.remove('active');
+      movingStudentId = null;
+    }
+
+    function reassignStudent(studentId, targetGroupId, targetPosIndex) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+
+      block.groups.forEach(g => {
+        g.studentIds = g.studentIds.filter(id => id !== studentId);
+      });
+
+      if (targetGroupId !== -1) {
+        const dest = block.groups.find(g => g.id === targetGroupId);
+        if (dest) {
+          if (targetPosIndex !== undefined && targetPosIndex >= 0 && targetPosIndex <= dest.studentIds.length) {
+            dest.studentIds.splice(targetPosIndex, 0, studentId);
+          } else {
+            dest.studentIds.push(studentId);
+          }
+        }
+      }
+
+      if (targetPosIndex !== -1 && block.sortMode !== 'manual') {
+        block.sortMode = 'manual';
+        document.getElementById('sort-selector').value = 'manual';
+      }
+
+      saveState();
+      renderView();
+    }
+
+    // ATTENDANCE & SEPARATION RULES
+    function openManageRosterModal() {
+      renderModalRoster();
+      renderSeparationRules();
+      populateRuleDropdowns();
+      document.getElementById('roster-modal').classList.add('active');
+    }
+
+    function closeRosterModal() {
+      document.getElementById('roster-modal').classList.remove('active');
+      renderView();
+    }
+
+    function renderModalRoster() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      document.getElementById('modal-roster-count').textContent = block.roster.length;
+      const list = document.getElementById('modal-roster-list');
+
+      if (block.roster.length === 0) {
+        list.innerHTML = '<div class="text-xs text-slate-400 py-3 text-center">No students registered in this block. Upload roster on the Main Hub.</div>';
+        return;
+      }
+
+      list.innerHTML = block.roster.map(s => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 text-xs">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" ${s.active ? 'checked' : ''} onchange="toggleStudentActive('${s.id}')" class="rounded text-maroon cursor-pointer" />
+            <span class="${s.active ? 'font-bold text-slate-800' : 'text-slate-400 line-through'}">${escapeHtml(s.name)}</span>
+          </div>
+          <span class="text-[10px] font-bold ${s.active ? 'text-emerald-700' : 'text-slate-400'}">${s.active ? 'Present' : 'Absent'}</span>
+        </div>
+      `).join('');
+    }
+
+    function toggleStudentActive(studentId) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const s = block.roster.find(x => x.id === studentId);
+      if (s) {
+        s.active = !s.active;
+        saveState();
+        renderModalRoster();
+      }
+    }
+
+    function populateRuleDropdowns() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const a = document.getElementById('pair-student-a');
+      const b = document.getElementById('pair-student-b');
+
+      const options = block.roster.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+      a.innerHTML = options;
+      b.innerHTML = options;
+    }
+
+    function addSeparationRule() {
+      const a = document.getElementById('pair-student-a').value;
+      const b = document.getElementById('pair-student-b').value;
+      if (!a || !b || a === b) {
+        alert('Please select two different students to separate.');
+        return;
+      }
+
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const exists = block.doNotPair.some(r =>
+        (r.studentA === a && r.studentB === b) || (r.studentA === b && r.studentB === a)
+      );
+
+      if (exists) {
+        alert('This separation rule already exists.');
+        return;
+      }
+
+      block.doNotPair.push({ studentA: a, studentB: b });
+      saveState();
+      renderSeparationRules();
+    }
+
+    function renderSeparationRules() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const list = document.getElementById('separation-rules-list');
+
+      if (block.doNotPair.length === 0) {
+        list.innerHTML = '<div class="text-[11px] text-slate-400 py-2 text-center">No separation rules established.</div>';
+        return;
+      }
+
+      list.innerHTML = block.doNotPair.map((r, idx) => {
+        const studentA = block.roster.find(s => s.id === r.studentA);
+        const studentB = block.roster.find(s => s.id === r.studentB);
+        const nameA = studentA ? escapeHtml(studentA.name) : 'Unknown';
+        const nameB = studentB ? escapeHtml(studentB.name) : 'Unknown';
+
+        return `
+          <div class="flex items-center justify-between p-1.5 px-2.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-700">
+            <span>&#128683; ${nameA} &ne; ${nameB}</span>
+            <button onclick="removeSeparationRule(${idx})" class="text-slate-400 hover:text-red-500 font-bold">&times;</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function removeSeparationRule(idx) {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      block.doNotPair.splice(idx, 1);
+      saveState();
+      renderSeparationRules();
+    }
+
+    // CSV TEMPLATE DOWNLOAD
+    function downloadMasterTemplate() {
+      const csvContent =
+`Block,Student Name,Notes
+1,Student Name 1,Sample Note
+1,Student Name 2,Sample Note
+1,Student Name 3,Sample Note
+2,Student Name 4,Sample Note
+2,Student Name 5,Sample Note
+3,Student Name 6,Sample Note
+4,Student Name 7,Sample Note
+5,Student Name 8,Sample Note`;
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Classroom_5_Blocks_Roster_Template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // EXPORT SUITE
+    function openExportModal() {
+      document.getElementById('export-modal').classList.add('active');
+    }
+
+    function closeExportModal() {
+      document.getElementById('export-modal').classList.remove('active');
+    }
+
+    function generateExportText() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      const today = new Date().toLocaleDateString();
+      let text = `Classroom Groups - Block ${APP_STATE.activeBlock}\nDate: ${today}\nSort Mode: ${block.sortMode}\nJobs Enabled: ${block.enableJobs ? 'Yes' : 'No'}\n\n`;
+
+      if (block.groups.length === 0) {
+        text += 'No groups generated yet for this block.\n';
+      } else {
+        block.groups.forEach((grp) => {
+          text += `====================================\n`;
+          text += `${grp.name.toUpperCase()}\n`;
+          text += `====================================\n`;
+          const members = grp.studentIds.map(id => block.roster.find(s => s.id === id)).filter(Boolean);
+          if (members.length === 0) {
+            text += `  (No students assigned)\n`;
+          } else {
+            members.forEach((m, mIdx) => {
+              const role = (block.enableJobs && block.memberJobs && block.memberJobs[m.id]) ? ` [Role: ${block.memberJobs[m.id]}]` : '';
+              text += `  ${mIdx + 1}. ${m.name}${role}\n`;
+            });
+          }
+          text += `\n`;
+        });
+      }
+
+      const assignedIds = new Set();
+      block.groups.forEach(g => g.studentIds.forEach(id => assignedIds.add(id)));
+      const unassigned = block.roster.filter(s => s.active && !assignedIds.has(s.id));
+      if (unassigned.length > 0) {
+        text += `Unassigned Students (${unassigned.length}):\n`;
+        unassigned.forEach(u => {
+          text += `  - ${u.name}\n`;
+        });
+        text += `\n`;
+      }
+
+      return text;
+    }
+
+    function exportAsTextFile() {
+      const content = generateExportText();
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Block_${APP_STATE.activeBlock}_Groups_${new Date().toISOString().slice(0,10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      closeExportModal();
+    }
+
+    function exportAsImageFile() {
+      const block = APP_STATE.blocks[APP_STATE.activeBlock];
+      if (block.groups.length === 0) {
+        alert('There are no groups generated to create an image.');
+        return;
+      }
+
+      const canvas = document.getElementById('export-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const groups = block.groups;
+      const numCols = Math.min(3, Math.max(1, groups.length));
+      const numRows = Math.ceil(groups.length / numCols);
+
+      const cardWidth = 350;
+      const cardHeight = 260;
+      const padding = 28;
+      const headerHeight = 110;
+
+      canvas.width = (numCols * cardWidth) + ((numCols + 1) * padding);
+      canvas.height = headerHeight + (numRows * cardHeight) + ((numRows + 1) * padding);
+
+      ctx.fillStyle = APP_STATE.theme.bg || '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = APP_STATE.theme.font || '#0f172a';
+      ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillText(`Block ${APP_STATE.activeBlock} - Group Assignments`, padding, 48);
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '14px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillText(`Generated on ${new Date().toLocaleDateString()} | Collierville High School`, padding, 75);
+
+      ctx.fillStyle = APP_STATE.theme.accent || '#701c2e';
+      ctx.fillRect(padding, 90, canvas.width - (padding * 2), 3);
+
+      groups.forEach((grp, index) => {
+        const col = index % numCols;
+        const row = Math.floor(index / numCols);
+        const x = padding + col * (cardWidth + padding);
+        const y = headerHeight + padding + row * (cardHeight + padding);
+
+        ctx.fillStyle = APP_STATE.theme.card || '#ffffff';
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1.5;
+
+        roundRect(ctx, x, y, cardWidth, cardHeight, 14, true, true);
+
+        const bannerColor = grp.bannerColor || DEFAULT_BANNER_PALETTE[index % DEFAULT_BANNER_PALETTE.length];
+        const textColor = getBannerTextColor(bannerColor);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x + 14, y);
+        ctx.lineTo(x + cardWidth - 14, y);
+        ctx.quadraticCurveTo(x + cardWidth, y, x + cardWidth, y + 14);
+        ctx.lineTo(x + cardWidth, y + 46);
+        ctx.lineTo(x, y + 46);
+        ctx.lineTo(x, y + 14);
+        ctx.quadraticCurveTo(x, y, x + 14, y);
+        ctx.closePath();
+        ctx.fillStyle = bannerColor;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillText(grp.name, x + 18, y + 30);
+
+        const members = grp.studentIds.map(id => block.roster.find(s => s.id === id)).filter(Boolean);
+        let studentY = y + 72;
+
+        if (members.length === 0) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = 'italic 13px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText('(No students assigned)', x + 20, studentY);
+        } else {
+          members.forEach((m, mIdx) => {
+            if (studentY < y + cardHeight - 20) {
+              const role = (block.enableJobs && block.memberJobs && block.memberJobs[m.id]) ? ` [${block.memberJobs[m.id]}]` : '';
+              ctx.fillStyle = APP_STATE.theme.font || '#1e293b';
+              ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, sans-serif';
+              ctx.fillText(`${mIdx + 1}. ${m.name}`, x + 20, studentY);
+
+              if (role) {
+                ctx.fillStyle = '#6b21a8';
+                ctx.font = 'italic 11px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.fillText(role, x + 175, studentY);
+              }
+              studentY += 24;
+            }
+          });
+        }
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `Block_${APP_STATE.activeBlock}_Groups_${new Date().toISOString().slice(0,10)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      closeExportModal();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function printClassGroups() {
+      closeExportModal();
+      window.print();
+    }
+
+    function emailClassGroups() {
+      const subject = encodeURIComponent(`Classroom Groups - Block ${APP_STATE.activeBlock}`);
+      const body = encodeURIComponent(generateExportText());
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      closeExportModal();
+    }
+
+    function openColorModal() {
+      document.getElementById('color-modal').classList.add('active');
+    }
+    function closeColorModal() {
+      document.getElementById('color-modal').classList.remove('active');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Cross-tab real-time listener: Ingest updates from Landing Page immediately
+    window.addEventListener('storage', (e) => {
+      if (
+        e.key === 'pass_tracker_rosters_v9' ||
+        e.key === 'cls_group_maker_data' ||
+        e.key === 'cls_group_maker_pin' ||
+        e.key === 'pass_tracker_pin_v9' ||
+        e.key === 'cls_group_maker_theme'
+      ) {
+        loadState();
+        renderTabs();
+        renderTeacherPanelValues();
+        renderView();
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      renderTabs();
+      renderTeacherPanelValues();
+      renderView();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Classroom Hall Pass Tracker</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            maroon: {
+              700: '#701c2e',
+              800: '#5c1625',
+              900: '#480f1c'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: text;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .pulse-warning {
+      animation: pulseAlert 1.2s infinite;
+    }
+    @keyframes pulseAlert {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.02); filter: brightness(1.15); }
+    }
+
+    .hub-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      text-decoration: none;
+      padding: 0.55rem 0.9rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: 1px solid #cbd5e1;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+    .hub-link:hover {
+      background-color: #e2e8f0;
+    }
+    .hub-link:active {
+      transform: scale(0.97);
+      background-color: #cbd5e1;
+    }
+
+    .keypad-btn {
+      height: 52px;
+      border-radius: 12px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.1s, transform 0.08s;
+    }
+    .keypad-btn:active {
+      background-color: #e2e8f0;
+      transform: scale(0.96);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake {
+      animation: shake 0.35s ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased selection:bg-indigo-100">
+
+  <!-- Main Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm px-4 lg:px-8 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- LEFT: Back to Main Hub & Teacher Options Trigger -->
+      <div class="flex items-center space-x-2.5 flex-wrap gap-y-2">
+        <a href="index.html" class="hub-link" title="Return to Landing Page">
+          <span class="text-base leading-none">&#8592;</span>
+          <span>Main Hub</span>
+        </a>
+
+        <button id="auth-btn" onclick="handleAuthAction()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-sm transition active:scale-95">
+          <span id="auth-icon">&#128274;</span>
+          <span id="auth-label">Teacher Controls</span>
+        </button>
+
+        <span id="lock-badge" class="hidden sm:inline-flex text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 items-center gap-1">
+          <span>&#128274;</span> Student View
+        </span>
+
+        <span id="config-sync-badge" class="hidden sm:inline-flex text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+          &#10003; Synced to Hub
+        </span>
+      </div>
+
+      <!-- MIDDLE: Brand & Live Time Display -->
+      <div class="flex items-center space-x-3 justify-center">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-indigo-200 shadow-md shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-baseline gap-2">
+            <h1 class="text-xl font-bold tracking-tight text-slate-800 leading-tight">PassManager</h1>
+            <span id="liveTimeClock" class="font-mono font-extrabold text-sm sm:text-base text-indigo-600">--:--:-- --</span>
+          </div>
+          <p id="currentDateDisplay" class="text-xs font-medium text-slate-500">Loading date...</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: Block Switcher Tabs (Populated directly from landing page configuration) -->
+      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 space-x-1 overflow-x-auto max-w-full" id="blockTabs">
+        <!-- Generated Dynamically -->
+      </div>
+
+    </div>
+  </header>
+
+  <!-- TEACHER CONTROL CENTER PANEL (Visible only when unlocked) -->
+  <section id="teacher-panel" class="hidden bg-slate-50 border-b border-slate-200 px-4 lg:px-8 py-4 transition-all shadow-inner">
+    <div class="max-w-7xl mx-auto space-y-4">
+      
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
+        <div>
+          <h2 class="text-sm sm:text-base font-extrabold text-slate-800 flex items-center gap-2">
+            <span>&#9881;</span> Teacher Daily Control Center &mdash; <span id="panel-block-title" class="text-indigo-600">Active</span>
+          </h2>
+          <p class="text-xs text-slate-500 font-semibold mt-0.5">Manage daily student passes, clear today's logs, or edit master rosters &amp; schedules on the Main Hub.</p>
+        </div>
+        
+        <div class="flex items-center gap-2 flex-wrap">
+          <a href="index.html" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 shadow-sm active:scale-95">
+            <span>&#9881;</span> Open Master Hub Setup
+          </a>
+          <button onclick="lockTeacherMode()" class="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 font-bold text-xs hover:bg-rose-100 flex items-center gap-1.5 shadow-sm active:scale-95">
+            <span>&#128274;</span> Lock Mode
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <button onclick="openResetModalDirect()" class="flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:bg-amber-50/50 shadow-sm transition active:scale-98 group">
+          <svg class="w-5 h-5 text-amber-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="text-xs font-bold text-slate-800 group-hover:text-amber-800">Reset Daily Passes</span>
+          <span class="text-[10px] text-slate-400">Restore student allowance</span>
+        </button>
+
+        <button onclick="openLogModalDirect()" class="flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 shadow-sm transition active:scale-98 group">
+          <svg class="w-5 h-5 text-emerald-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <span class="text-xs font-bold text-slate-800 group-hover:text-emerald-800">View Pass Log</span>
+          <span class="text-[10px] text-slate-400">Today's history &amp; CSV</span>
+        </button>
+
+        <button onclick="openSchedulePreviewModal()" class="flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 shadow-sm transition active:scale-98 group">
+          <svg class="w-5 h-5 text-indigo-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="text-xs font-bold text-slate-800 group-hover:text-indigo-800">Active Bell Schedule</span>
+          <span class="text-[10px] text-slate-400">View active period times</span>
+        </button>
+
+        <a href="index.html" class="flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-slate-200 hover:border-maroon-700 hover:bg-rose-50/40 shadow-sm transition active:scale-98 group">
+          <svg class="w-5 h-5 text-maroon-700 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
+          </svg>
+          <span class="text-xs font-bold text-slate-800 group-hover:text-maroon-900">Upload Roster CSV</span>
+          <span class="text-[10px] text-slate-400">Configure on Main Hub</span>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Live Restriction Warning Banner -->
+  <div id="restrictionBanner" class="hidden bg-amber-500 text-white px-4 py-2 text-center text-xs sm:text-sm font-bold shadow-inner flex items-center justify-center gap-2">
+    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+    <span id="restrictionBannerText">Pass blackout window in effect.</span>
+  </div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    
+    <!-- Currently Out Banner Section -->
+    <section class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-3 w-3 relative">
+            <span id="activeRadarRing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 hidden"></span>
+            <span id="activeRadarDot" class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </span>
+          <h2 class="text-base font-bold text-slate-800 tracking-wide uppercase">Currently Out of Room</h2>
+        </div>
+        <span id="activeCountBadge" class="bg-slate-100 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+          0 / 2 Out
+        </span>
+      </div>
+
+      <!-- Active Cards Grid -->
+      <div id="activeList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="emptyActiveState" class="col-span-full py-8 text-center text-slate-400 flex flex-col items-center justify-center">
+          <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-2 text-slate-300">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium">All students are present in the classroom.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Student Roster Grid -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-bold text-slate-900" id="rosterTitle">Student Roster</h2>
+            <span id="blockWindowBadge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"></span>
+          </div>
+          <p class="text-xs text-slate-500">Max 1 bathroom break per day &bull; Max 2 students out &bull; 15m Period &amp; Lunch Restrictions</p>
+        </div>
+        
+        <!-- Search filter -->
+        <div class="relative w-full sm:w-64">
+          <input type="text" id="studentSearch" placeholder="Search student name..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Students Grid -->
+      <div id="studentGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+        <!-- Populated via JavaScript -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Pass Type & Destination Modal -->
+  <div id="confirmModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 transform transition-all">
+      <div id="modalIconContainer" class="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3 bg-indigo-50 text-indigo-600">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </div>
+
+      <h3 id="modalStudentName" class="text-xl font-bold text-slate-900 mb-1">Student Name</h3>
+      <p id="modalDescription" class="text-xs text-slate-500 mb-4">Select pass destination:</p>
+      
+      <!-- Destination Buttons -->
+      <div id="passTypeSelectionGroup" class="flex flex-col gap-2 mb-4">
+        <!-- Bathroom: Blue -->
+        <button onclick="selectPassTypeAndDepart('Bathroom')" class="w-full py-2.5 px-4 rounded-xl border-2 border-blue-600 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-between transition active:scale-98 shadow-sm">
+          <span class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-white"></span>
+            Bathroom
+          </span>
+          <span id="bathroomPassCountHint" class="text-[11px] font-semibold text-blue-100">Counts as pass</span>
+        </button>
+
+        <!-- Guidance: Purple -->
+        <button onclick="selectPassTypeAndDepart('Guidance')" class="w-full py-2.5 px-4 rounded-xl border-2 border-purple-600 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm flex items-center justify-between transition active:scale-98 shadow-sm">
+          <span class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-white"></span>
+            Guidance
+          </span>
+          <span class="text-[11px] font-bold text-white bg-purple-800/60 px-2 py-0.5 rounded-full">Exempt</span>
+        </button>
+
+        <!-- Errand: Green -->
+        <button onclick="selectPassTypeAndDepart('Errand')" class="w-full py-2.5 px-4 rounded-xl border-2 border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-between transition active:scale-98 shadow-sm">
+          <span class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-white"></span>
+            Errand
+          </span>
+          <span class="text-[11px] font-bold text-white bg-emerald-800/60 px-2 py-0.5 rounded-full">Exempt</span>
+        </button>
+
+        <!-- Library: Yellow -->
+        <button onclick="selectPassTypeAndDepart('Library')" class="w-full py-2.5 px-4 rounded-xl border-2 border-amber-400 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-sm flex items-center justify-between transition active:scale-98 shadow-sm">
+          <span class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-amber-950"></span>
+            Library
+          </span>
+          <span class="text-[11px] font-bold text-amber-950 bg-amber-200 px-2 py-0.5 rounded-full">Exempt</span>
+        </button>
+      </div>
+
+      <!-- Action Button for Check-ins -->
+      <button id="modalActionBtn" class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md transition active:scale-98 mb-2 hidden">
+        Confirm
+      </button>
+
+      <button id="modalCancelBtn" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Teacher Override Code Modal (Protected Passcode Auth) -->
+  <div id="overrideModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100">
+      <div class="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3 bg-rose-50 text-rose-600">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-bold text-slate-900 mb-1" id="overrideModalTitle">Teacher Override</h3>
+      <p class="text-xs text-slate-500 mb-3" id="overrideModalReason">Pass restriction active. Enter teacher passcode to authorize pass.</p>
+
+      <input type="password" id="overridePasscodeInput" maxlength="12" inputmode="numeric" placeholder="••••" class="w-full text-center tracking-widest text-2xl font-bold py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl mb-2 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+      <p id="overridePasscodeError" class="text-xs text-rose-600 font-medium mb-3 hidden">Incorrect passcode</p>
+
+      <div class="mb-4 text-left">
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Select Destination</label>
+        <select id="overrideTypeSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-rose-500">
+          <option value="Bathroom">Bathroom (Red Override)</option>
+          <option value="Guidance">Guidance (Red Override)</option>
+          <option value="Errand">Errand (Red Override)</option>
+          <option value="Library">Library (Red Override)</option>
+        </select>
+      </div>
+      
+      <div class="flex gap-2">
+        <button id="overrideCancelBtn" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">Cancel</button>
+        <button id="overrideSubmitBtn" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-100">Authorize</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keypad Authentication Modal (No plain-text PIN exposed) -->
+  <div id="keypad-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 w-[340px] max-w-[92vw] shadow-2xl border border-slate-100 text-slate-900" id="keypad-box">
+      <div class="text-center mb-3">
+        <div class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center bg-indigo-50 text-indigo-600 text-xl mb-2 font-bold shadow-sm">
+          &#128274;
+        </div>
+        <h3 class="text-lg font-black text-slate-800">Teacher Passcode</h3>
+        <p class="text-xs text-slate-500 font-semibold">Enter passcode configured on the Main Hub</p>
+      </div>
+
+      <!-- Password Dots Container -->
+      <div class="flex justify-center gap-3 my-4" id="pin-dots-container"></div>
+
+      <!-- Numeric Keypad -->
+      <div class="grid grid-cols-3 gap-2 mt-2">
+        <button onclick="pressKey('1')" class="keypad-btn">1</button>
+        <button onclick="pressKey('2')" class="keypad-btn">2</button>
+        <button onclick="pressKey('3')" class="keypad-btn">3</button>
+        <button onclick="pressKey('4')" class="keypad-btn">4</button>
+        <button onclick="pressKey('5')" class="keypad-btn">5</button>
+        <button onclick="pressKey('6')" class="keypad-btn">6</button>
+        <button onclick="pressKey('7')" class="keypad-btn">7</button>
+        <button onclick="pressKey('8')" class="keypad-btn">8</button>
+        <button onclick="pressKey('9')" class="keypad-btn">9</button>
+        <button onclick="closeKeypad()" class="keypad-btn text-xs font-black uppercase text-slate-500">Cancel</button>
+        <button onclick="pressKey('0')" class="keypad-btn">0</button>
+        <button onclick="pressClear()" class="keypad-btn text-xs font-black uppercase text-rose-500">&#9003;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Daily Passes Modal -->
+  <div id="resetPassesModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+      <div class="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3 bg-amber-50 text-amber-600">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </div>
+
+      <h3 class="text-lg font-bold text-center text-slate-900 mb-1">Reset Pass Allowance</h3>
+      <p class="text-xs text-center text-slate-500 mb-5">Select passes to restore to 1. Active passes remain out until returned.</p>
+      
+      <div class="space-y-4">
+        <!-- Individual Student Option -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Reset Individual Student</label>
+          <div class="flex gap-2">
+            <select id="individualStudentSelect" class="flex-1 px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500"></select>
+            <button id="resetIndividualBtn" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-sm">
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Bulk Options -->
+        <div class="flex flex-col gap-2 pt-1 border-t border-slate-100">
+          <button id="resetCurrentBlockBtn" class="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition active:scale-98">
+            Reset Current Block Only
+          </button>
+          <button id="resetAllBlocksBtn" class="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition active:scale-98">
+            Reset All Blocks (Entire Day)
+          </button>
+          <button id="cancelResetBtn" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+            Done / Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pass History Log Modal -->
+  <div id="logModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 sm:p-6">
+    <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-100">
+      <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Today's Pass Log</h3>
+          <p class="text-xs text-slate-500">History of passes, individual deletions, and CSV export</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="exportCsvBtn" class="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm transition">
+            Export / Download CSV
+          </button>
+          <button id="viewCsvRawBtn" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition border border-slate-200">
+            Copy / View CSV
+          </button>
+          <button id="closeLogBtn" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <table class="w-full text-left text-sm">
+          <thead class="text-xs uppercase bg-slate-50 text-slate-500 sticky top-0">
+            <tr>
+              <th class="py-2.5 px-3 rounded-l-lg">Student</th>
+              <th class="py-2.5 px-3">Type</th>
+              <th class="py-2.5 px-3">Block / Class</th>
+              <th class="py-2.5 px-3">Departed</th>
+              <th class="py-2.5 px-3">Returned</th>
+              <th class="py-2.5 px-3">Duration</th>
+              <th class="py-2.5 px-3 text-right rounded-r-lg">Action</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody" class="divide-y divide-slate-100 text-slate-700">
+            <!-- Populated via JavaScript -->
+          </tbody>
+        </table>
+        <div id="emptyLogPrompt" class="py-12 text-center text-slate-400 text-sm hidden">
+          No passes recorded yet today.
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center rounded-b-3xl">
+        <button id="clearTodayBtn" class="text-xs font-medium text-rose-600 hover:text-rose-700 transition">
+          Clear Today's Log
+        </button>
+        <span id="logSummaryCount" class="text-xs font-semibold text-slate-500">0 records</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Raw CSV Viewer Modal -->
+  <div id="csvViewerModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <h3 class="text-base font-bold text-slate-900">CSV Export Data</h3>
+        <button id="closeCsvViewerBtn" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <p class="text-xs text-slate-500 mb-2">Tap <b>Copy to Clipboard</b> and paste into Apple Numbers, Notes, or Google Sheets.</p>
+      <textarea id="rawCsvTextArea" readonly class="w-full h-64 p-3 font-mono text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none select-text mb-4"></textarea>
+      <div class="flex justify-end gap-2">
+        <button id="copyCsvClipboardBtn" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm">
+          Copy to Clipboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Bell Schedule Preview Modal -->
+  <div id="schedulePreviewModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Active Bell Schedule</h3>
+          <p class="text-xs text-slate-500">Configured via Main Landing Hub</p>
+        </div>
+        <button onclick="closeSchedulePreviewModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-2.5 overflow-y-auto pr-1 flex-1 text-xs" id="schedulePreviewContainer">
+        <!-- Rendered via JS -->
+      </div>
+
+      <div class="pt-4 border-t border-slate-100 flex justify-between items-center mt-3">
+        <a href="index.html" class="text-xs font-bold text-indigo-600 hover:underline">Edit Times on Landing Hub &rarr;</a>
+        <button onclick="closeSchedulePreviewModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Security & Schedules Constants */
+    const DEFAULT_PASSCODE = "0000";
+    const MAX_CONCURRENT_STUDENTS = 2; // Maximum concurrent passes[cite: 1]
+    const MAX_DAILY_BREAKS = 1;        // Maximum standard bathroom breaks per student per day[cite: 1]
+
+    const DEFAULT_BELL_SCHEDULE = {
+      'Block 1': { start: '07:30', end: '08:55' },
+      'Block 2': { start: '09:01', end: '10:26' },
+      'Block 3': { start: '10:32', end: '11:02' },
+      'Block 4': { start: '11:08', end: '13:00', lunchStart: '12:06', lunchEnd: '12:31' },
+      'Block 5': { start: '13:05', end: '14:30' }
+    };
+
+    const DEFAULT_ROSTERS = {
+      'Block 1': ['Wesam Ballouk', 'Eric Chen', 'Kieran Flippo', 'Alec Gruber', 'Jameson Hoch', 'Jaydan Jackson', 'William Jones', 'Mohammed Labai', 'Matheus Leitzke', 'Ashish Mangesh', 'Calen McDamiel', 'Thomas Parker', 'Linnon Tyson'],
+      'Block 2': ['Darsh Arvind', 'Anvarsho Azizmamadov', 'Ryan Call', 'Prahasith Chandu', 'Colton Delashmit', 'Ganesh Divakaran', 'Noah Gullet', 'Khyati Gupta', 'Naman Jain', 'Tejasri Magesh', 'Jasmita Nandigam', 'Keya Patel', 'Bhoomika Sammeta', 'Ashrit Somishetty', 'Kiersten Terrell', 'Landon Watson'],
+      'Block 3': ['Riley Brewer', 'Abigail Call', 'Brent Coleman', 'Peyton Conlon', 'Jayda Gallagher', 'Rohith Giledi', 'Jamari Malone', 'Muhammad Mansour', 'Joelle Miller', 'Adriana Nelson', 'Justin Perez', 'Duc Phan', 'Rami Rassul', 'Mycah Roberts', 'Keath Smith', 'Garrett Stephens', 'Alecia Whaley', 'Lucy Won', 'Brian Wright'],
+      'Block 4': ['Hamza Abdulhalim', 'Saleh Ahsan', 'Anisha Athian', 'Emery Benson', 'Chathurya Bolla', 'Minahil Faisal', 'Adriana Garcia', 'Michael Hafez', 'Sahithi Indukuri', 'Aliyan Khetani', 'Victor Kornitz', 'Owen Lyles', 'Elise MacDonald', 'Sharmitha Pradheep', 'Prem Mundra', 'Betul Murat', 'Samyami Paidi', 'Estella Poe', 'Lexie Rorie', 'Cruz Rosa', 'Neya Sam', 'Kanav Santhosh', 'Aliza Syed', 'Saija Vankadara', 'Kanak Verma', 'Preston Vu'],
+      'Block 5': ['Teacher Planning']
+    };
+
+    /* State Variables */
+    let isTeacherUnlocked = false;
+    let enteredPin = '';
+    let teacherPasscode = DEFAULT_PASSCODE;
+
+    let currentBlock = 'Block 1';
+    let blockList = ['Block 1', 'Block 2', 'Block 3', 'Block 4', 'Block 5'];
+    let rosters = {};
+    let bellSchedule = {};
+
+    let logs = []; // { id, student, type, block, isOverride, startTime, endTime, durationMinutes }[cite: 1]
+    let activePasses = []; // { id, student, type, block, isOverride, startTime }[cite: 1]
+    let filterQuery = '';
+    let studentPendingSignOut = null;
+    let overridePendingStudent = null;
+
+    /* Synchronized Storage Keys matching the Landing Page */
+    const STORAGE_KEY_PASSCODE = 'pass_tracker_pin_v9';
+    const STORAGE_KEY_GROUP_PIN = 'cls_group_maker_pin';
+    const STORAGE_KEY_ROSTERS = 'pass_tracker_rosters_v9';
+    const STORAGE_KEY_SCHEDULE = 'pass_tracker_schedule_v9';
+    const STORAGE_KEY_LOGS = 'pass_tracker_daily_logs_v9';
+    const STORAGE_KEY_DATE = 'pass_tracker_active_date_v9';
+    const STORAGE_KEY_ACTIVE = 'pass_tracker_active_passes_v9';
+
+    function formatTime(isoString) {
+      if (!isoString) return '--';
+      const d = new Date(isoString);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function getTodayString() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    /* INGEST CONFIGURATION FROM LANDING PAGE (LocalStorage) */
+    function loadLandingPageConfiguration() {
+      // 1. Ingest Passcode
+      const savedPin = localStorage.getItem(STORAGE_KEY_PASSCODE) || localStorage.getItem(STORAGE_KEY_GROUP_PIN);
+      if (savedPin) {
+        teacherPasscode = savedPin;
+      } else {
+        teacherPasscode = DEFAULT_PASSCODE;
+      }
+
+      // 2. Ingest Rosters & Block List
+      const savedRosters = localStorage.getItem(STORAGE_KEY_ROSTERS);
+      if (savedRosters) {
+        try {
+          rosters = JSON.parse(savedRosters);
+          const keys = Object.keys(rosters);
+          if (keys.length > 0) {
+            blockList = keys;
+          }
+        } catch (e) {
+          rosters = JSON.parse(JSON.stringify(DEFAULT_ROSTERS));
+          blockList = Object.keys(rosters);
+        }
+      } else {
+        rosters = JSON.parse(JSON.stringify(DEFAULT_ROSTERS));
+        blockList = Object.keys(rosters);
+      }
+
+      // 3. Ingest Bell Schedule
+      const savedSchedule = localStorage.getItem(STORAGE_KEY_SCHEDULE);
+      if (savedSchedule) {
+        try {
+          bellSchedule = JSON.parse(savedSchedule);
+        } catch (e) {
+          bellSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
+        }
+      } else {
+        bellSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
+      }
+
+      // Ensure active block is valid
+      if (!blockList.includes(currentBlock)) {
+        currentBlock = blockList[0] || 'Block 1';
+      }
+    }
+
+    function initData() {
+      const today = getTodayString();
+      const savedDate = localStorage.getItem(STORAGE_KEY_DATE);
+
+      loadLandingPageConfiguration();
+
+      // Day Rollover for logs & active passes
+      if (savedDate !== today) {
+        logs = [];
+        activePasses = [];
+        localStorage.setItem(STORAGE_KEY_DATE, today);
+      } else {
+        try {
+          logs = JSON.parse(localStorage.getItem(STORAGE_KEY_LOGS)) || [];
+          activePasses = JSON.parse(localStorage.getItem(STORAGE_KEY_ACTIVE)) || [];
+        } catch (e) {
+          logs = [];
+          activePasses = [];
+        }
+      }
+
+      savePassState();
+
+      const dateOpts = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+      document.getElementById('currentDateDisplay').textContent = new Date().toLocaleDateString(undefined, dateOpts);
+    }
+
+    function savePassState() {
+      localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logs));
+      localStorage.setItem(STORAGE_KEY_ACTIVE, JSON.stringify(activePasses));
+      localStorage.setItem(STORAGE_KEY_DATE, getTodayString());
+    }
+
+    /* 15-Minute Restriction Evaluator (Uses Landing Page Schedule) */
+    function checkBlockRestriction() {
+      const sched = bellSchedule[currentBlock];
+      if (!sched || !sched.start || !sched.end) {
+        return { isRestricted: false, reason: '' };
+      }
+
+      const now = new Date();
+      const [sH, sM] = sched.start.split(':').map(Number);
+      const [eH, eM] = sched.end.split(':').map(Number);
+
+      const blockStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sH, sM, 0);
+      const blockEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eH, eM, 0);
+
+      if (now < blockStart) {
+        return { isRestricted: true, reason: `${currentBlock} has not started yet.` };
+      }
+      if (now > blockEnd) {
+        return { isRestricted: true, reason: `${currentBlock} has ended.` };
+      }
+
+      const first15End = new Date(blockStart.getTime() + 15 * 60000);
+      if (now <= first15End) {
+        const minsLeft = Math.ceil((first15End - now) / 60000);
+        return { isRestricted: true, reason: `First 15 min of ${currentBlock} (${minsLeft}m left in restriction).` };
+      }
+
+      const last15Start = new Date(blockEnd.getTime() - 15 * 60000);
+      if (now >= last15Start) {
+        return { isRestricted: true, reason: `Final 15 min of ${currentBlock}.` };
+      }
+
+      if (sched.lunchStart && sched.lunchEnd) {
+        const [lsH, lsM] = sched.lunchStart.split(':').map(Number);
+        const [leH, leM] = sched.lunchEnd.split(':').map(Number);
+
+        const lunchStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), lsH, lsM, 0);
+        const lunchEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), leH, leM, 0);
+
+        const preLunch15 = new Date(lunchStart.getTime() - 15 * 60000);
+        const postLunch15 = new Date(lunchEnd.getTime() + 15 * 60000);
+
+        if (now >= preLunch15 && now < lunchStart) {
+          const minsLeft = Math.ceil((lunchStart - now) / 60000);
+          return { isRestricted: true, reason: `15 minutes before Lunch (${minsLeft}m until lunch).` };
+        }
+
+        if (now >= lunchStart && now <= lunchEnd) {
+          return { isRestricted: true, reason: 'Lunch period in progress.' };
+        }
+
+        if (now > lunchEnd && now <= postLunch15) {
+          const minsLeft = Math.ceil((postLunch15 - now) / 60000);
+          return { isRestricted: true, reason: `First 15 minutes after Lunch (${minsLeft}m remaining in restriction).` };
+        }
+      }
+
+      return { isRestricted: false, reason: '' };
+    }
+
+    function evaluateOverridePassConversions() {
+      if (activePasses.length === 0) return;
+
+      const restriction = checkBlockRestriction();
+      let didConvert = false;
+
+      activePasses.forEach(pass => {
+        if (pass.isOverride) {
+          const totalOut = activePasses.length;
+          const roomHasCapacity = totalOut <= MAX_CONCURRENT_STUDENTS;
+          const notInRestriction = !restriction.isRestricted;
+
+          let passesAllowed = true;
+          if (pass.type === 'Bathroom') {
+            const completedCount = logs.filter(l => l.student === pass.student && l.type === 'Bathroom' && !l.isOverride).length;
+            passesAllowed = completedCount < MAX_DAILY_BREAKS;
+          }
+
+          if (roomHasCapacity && notInRestriction && passesAllowed) {
+            pass.isOverride = false;
+            didConvert = true;
+          }
+        }
+      });
+
+      if (didConvert) {
+        savePassState();
+        renderAll();
+      }
+    }
+
+    function getPassStats(studentName) {
+      const completedBathroom = logs.filter(l => l.student === studentName && l.type === 'Bathroom' && !l.isOverride).length;
+      const activeBathroom = activePasses.some(p => p.student === studentName && p.type === 'Bathroom' && !p.isOverride);
+      const usedCount = completedBathroom + (activeBathroom ? 1 : 0);
+      const remaining = Math.max(0, MAX_DAILY_BREAKS - usedCount);
+      const isActive = activePasses.some(p => p.student === studentName);
+
+      return {
+        completedBathroom,
+        isActive,
+        usedCount,
+        remaining,
+        canSignOut: !isActive
+      };
+    }
+
+    function updateLiveClock() {
+      const now = new Date();
+      document.getElementById('liveTimeClock').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      // Live Restriction Banner
+      const restriction = checkBlockRestriction();
+      const banner = document.getElementById('restrictionBanner');
+      const bannerText = document.getElementById('restrictionBannerText');
+
+      if (restriction.isRestricted) {
+        banner.classList.remove('hidden');
+        bannerText.textContent = `Pass Restriction Active for ${currentBlock}: ${restriction.reason}`;
+      } else {
+        banner.classList.add('hidden');
+      }
+
+      // Schedule window hint in header
+      const sched = bellSchedule[currentBlock];
+      const schedBadge = document.getElementById('blockWindowBadge');
+      if (sched && sched.start && sched.end) {
+        if (sched.lunchStart && sched.lunchEnd) {
+          schedBadge.textContent = `${sched.start}–${sched.end} (Lunch: ${sched.lunchStart}–${sched.lunchEnd})`;
+        } else {
+          schedBadge.textContent = `${sched.start} – ${sched.end}`;
+        }
+      } else {
+        schedBadge.textContent = '';
+      }
+    }
+
+    function renderBlockTabs() {
+      const container = document.getElementById('blockTabs');
+      container.innerHTML = '';
+
+      if (!blockList.includes(currentBlock) && blockList.length > 0) {
+        currentBlock = blockList[0];
+      }
+
+      blockList.forEach(blockName => {
+        const btn = document.createElement('button');
+        const isActive = blockName === currentBlock;
+        btn.className = `px-3.5 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+          isActive 
+            ? 'bg-indigo-600 text-white shadow-sm' 
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+        }`;
+        btn.textContent = blockName;
+        btn.onclick = () => {
+          currentBlock = blockName;
+          renderBlockTabs();
+          renderStudentGrid();
+          updateLiveClock();
+        };
+        container.appendChild(btn);
+      });
+
+      document.getElementById('rosterTitle').textContent = `${currentBlock} Roster`;
+      document.getElementById('panel-block-title').textContent = currentBlock;
+    }
+
+    function renderStudentGrid() {
+      const grid = document.getElementById('studentGrid');
+      grid.innerHTML = '';
+
+      const list = rosters[currentBlock] || [];
+      const query = filterQuery.toLowerCase().trim();
+      const filtered = list.filter(name => name.toLowerCase().includes(query));
+      const isRoomAtCapacity = activePasses.length >= MAX_CONCURRENT_STUDENTS;
+      const restriction = checkBlockRestriction();
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-10 text-center text-slate-400 text-sm">No students in ${currentBlock} matching "${filterQuery}".</div>`;
+        return;
+      }
+
+      filtered.forEach(studentName => {
+        const stats = getPassStats(studentName);
+        const card = document.createElement('div');
+        
+        let cardStyles = 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-md cursor-pointer';
+        let badgeContent = '';
+        let hintAction = 'Tap to Out';
+
+        if (stats.isActive) {
+          const pass = activePasses.find(p => p.student === studentName);
+          const isOverride = pass && pass.isOverride;
+          const type = pass ? pass.type : 'Bathroom';
+
+          if (isOverride) {
+            cardStyles = 'bg-rose-600 border-rose-700 text-white shadow-lg ring-4 ring-rose-300 cursor-pointer';
+            badgeContent = `<span class="inline-flex items-center gap-1.5 text-xs font-black px-2.5 py-1 rounded-full bg-rose-950 text-rose-100 uppercase tracking-wider">
+              <span class="h-2 w-2 rounded-full bg-white animate-ping"></span> ${type} (Override)
+            </span>`;
+          } else if (type === 'Bathroom') {
+            cardStyles = 'bg-blue-600 border-blue-700 text-white shadow-lg ring-4 ring-blue-300 cursor-pointer';
+            badgeContent = `<span class="inline-flex items-center gap-1.5 text-xs font-black px-2.5 py-1 rounded-full bg-blue-950 text-blue-100 uppercase tracking-wider">
+              <span class="h-2 w-2 rounded-full bg-white animate-ping"></span> Bathroom
+            </span>`;
+          } else if (type === 'Guidance') {
+            cardStyles = 'bg-purple-600 border-purple-700 text-white shadow-lg ring-4 ring-purple-300 cursor-pointer';
+            badgeContent = `<span class="inline-flex items-center gap-1.5 text-xs font-black px-2.5 py-1 rounded-full bg-purple-950 text-purple-100 uppercase tracking-wider">
+              <span class="h-2 w-2 rounded-full bg-white animate-ping"></span> Guidance
+            </span>`;
+          } else if (type === 'Errand') {
+            cardStyles = 'bg-emerald-600 border-emerald-700 text-white shadow-lg ring-4 ring-emerald-300 cursor-pointer';
+            badgeContent = `<span class="inline-flex items-center gap-1.5 text-xs font-black px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-100 uppercase tracking-wider">
+              <span class="h-2 w-2 rounded-full bg-white animate-ping"></span> Errand
+            </span>`;
+          } else if (type === 'Library') {
+            cardStyles = 'border-amber-500 bg-amber-400 text-amber-950 shadow-xl ring-4 ring-amber-200 cursor-pointer';
+            badgeContent = `<span class="inline-flex items-center gap-1.5 text-xs font-black px-2.5 py-1 rounded-full bg-amber-950 text-amber-100 uppercase tracking-wider">
+              <span class="h-2 w-2 rounded-full bg-amber-300 animate-ping"></span> Library
+            </span>`;
+          }
+
+          hintAction = 'Tap to In';
+        } else if (restriction.isRestricted) {
+          cardStyles = 'bg-amber-50/70 border-amber-300 hover:border-rose-400 cursor-pointer';
+          badgeContent = `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">Restricted Window</span>`;
+          hintAction = 'Override';
+        } else if (stats.remaining === 0) {
+          cardStyles = 'bg-slate-50 border-slate-200 opacity-90 cursor-pointer';
+          badgeContent = `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">Non-Bath Only</span>`;
+          hintAction = 'Tap to Out';
+        } else if (isRoomAtCapacity) {
+          cardStyles = 'bg-slate-50 border-slate-200 opacity-70 hover:opacity-90 cursor-pointer';
+          badgeContent = `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Room Full (Wait)</span>`;
+          hintAction = '2 Out';
+        } else {
+          badgeContent = `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+            ${stats.remaining} Pass Left
+          </span>`;
+        }
+
+        const isCurrentlyActive = stats.isActive;
+        const studentTitleColor = isCurrentlyActive ? (activePasses.find(p => p.student === studentName)?.type === 'Library' && !activePasses.find(p => p.student === studentName)?.isOverride ? 'text-amber-950 font-black' : 'text-white font-black') : 'text-slate-800 font-bold';
+        const studentHintColor = isCurrentlyActive ? (activePasses.find(p => p.student === studentName)?.type === 'Library' && !activePasses.find(p => p.student === studentName)?.isOverride ? 'text-amber-900 font-bold' : 'text-white/80 font-bold') : 'text-slate-400 font-medium';
+
+        card.className = `border rounded-2xl p-4 flex flex-col justify-between min-h-[110px] transition active:scale-95 select-none ${cardStyles}`;
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <span class="text-sm sm:text-base leading-snug ${studentTitleColor}">${studentName}</span>
+          </div>
+          <div class="flex items-center justify-between mt-auto">
+            ${badgeContent}
+            <span class="text-xs ${studentHintColor}">${hintAction}</span>
+          </div>
+        `;
+
+        card.onclick = () => handleStudentClick(studentName, stats);
+        grid.appendChild(card);
+      });
+    }
+
+    function handleStudentClick(studentName, stats) {
+      if (stats.isActive) {
+        showActionModal({
+          title: studentName,
+          desc: 'Currently out of the room. Ready to check back into class?',
+          btnText: 'Check In to Class',
+          btnColor: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100',
+          iconBg: 'bg-emerald-50 text-emerald-600',
+          action: () => checkInStudent(studentName)
+        });
+        return;
+      }
+
+      const restriction = checkBlockRestriction();
+      if (restriction.isRestricted) {
+        promptOverrideModal(studentName, `Pass restriction is active: ${restriction.reason}`);
+        return;
+      }
+
+      if (activePasses.length >= MAX_CONCURRENT_STUDENTS) {
+        promptOverrideModal(studentName, `Room limit reached: A maximum of ${MAX_CONCURRENT_STUDENTS} students can be out at a time.`);
+        return;
+      }
+
+      studentPendingSignOut = { studentName, stats };
+      openPassTypeModal(studentName, stats);
+    }
+
+    function openPassTypeModal(studentName, stats) {
+      const modal = document.getElementById('confirmModal');
+      const nameEl = document.getElementById('modalStudentName');
+      const descEl = document.getElementById('modalDescription');
+      const passGroup = document.getElementById('passTypeSelectionGroup');
+      const actionBtn = document.getElementById('modalActionBtn');
+      const cancelBtn = document.getElementById('modalCancelBtn');
+      const iconContainer = document.getElementById('modalIconContainer');
+      const hint = document.getElementById('bathroomPassCountHint');
+
+      nameEl.textContent = studentName;
+      descEl.textContent = 'Select destination to sign out:';
+      passGroup.classList.remove('hidden');
+      actionBtn.classList.add('hidden');
+      cancelBtn.classList.remove('hidden');
+
+      iconContainer.className = 'w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3 bg-indigo-50 text-indigo-600';
+      iconContainer.innerHTML = `
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      `;
+
+      const bathroomBtn = passGroup.children[0];
+      if (stats.remaining <= 0) {
+        bathroomBtn.disabled = true;
+        bathroomBtn.className = 'w-full py-2.5 px-4 rounded-xl border border-slate-200 bg-slate-100 text-slate-400 font-bold text-sm flex items-center justify-between opacity-60 cursor-not-allowed';
+        hint.textContent = 'Limit Reached (1/1)';
+        hint.className = 'text-[11px] font-semibold text-rose-600';
+      } else {
+        bathroomBtn.disabled = false;
+        bathroomBtn.className = 'w-full py-2.5 px-4 rounded-xl border-2 border-blue-600 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-between transition active:scale-98 cursor-pointer shadow-sm';
+        hint.textContent = `${stats.remaining} left today`;
+        hint.className = 'text-[11px] font-semibold text-blue-100';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function selectPassTypeAndDepart(type) {
+      if (!studentPendingSignOut) return;
+      checkOutStudent(studentPendingSignOut.studentName, type, false);
+      closeConfirmModal();
+    }
+
+    /* Red Override Flow */
+    function promptOverrideModal(studentName, reason) {
+      overridePendingStudent = studentName;
+      const modal = document.getElementById('overrideModal');
+      const input = document.getElementById('overridePasscodeInput');
+      const error = document.getElementById('overridePasscodeError');
+      const reasonEl = document.getElementById('overrideModalReason');
+      const titleEl = document.getElementById('overrideModalTitle');
+
+      titleEl.textContent = `Teacher Override: ${studentName}`;
+      reasonEl.textContent = `${reason} Enter teacher passcode to authorize an override pass.`;
+      input.value = '';
+      error.classList.add('hidden');
+
+      modal.classList.remove('hidden');
+      setTimeout(() => input.focus(), 150);
+    }
+
+    function submitOverride() {
+      const input = document.getElementById('overridePasscodeInput');
+      const error = document.getElementById('overridePasscodeError');
+      const typeSelect = document.getElementById('overrideTypeSelect');
+
+      if (input.value.trim() === teacherPasscode) {
+        const type = typeSelect.value;
+        checkOutStudent(overridePendingStudent, type, true);
+        document.getElementById('overrideModal').classList.add('hidden');
+        overridePendingStudent = null;
+      } else {
+        error.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    function checkOutStudent(studentName, type = 'Bathroom', isOverride = false) {
+      const newPass = {
+        id: 'pass_' + Date.now(),
+        student: studentName,
+        type: type,
+        block: currentBlock,
+        isOverride: isOverride,
+        startTime: new Date().toISOString()
+      };
+      activePasses.push(newPass);
+      savePassState();
+      renderAll();
+    }
+
+    function checkInStudent(studentName) {
+      const idx = activePasses.findIndex(p => p.student === studentName);
+      if (idx !== -1) {
+        const pass = activePasses[idx];
+        const endTime = new Date().toISOString();
+        const durationMin = Math.max(1, Math.round((new Date(endTime) - new Date(pass.startTime)) / 60000));
+
+        logs.unshift({
+          id: pass.id,
+          student: pass.student,
+          type: pass.type || 'Bathroom',
+          block: pass.block,
+          isOverride: !!pass.isOverride,
+          startTime: pass.startTime,
+          endTime: endTime,
+          durationMinutes: durationMin
+        });
+
+        activePasses.splice(idx, 1);
+        savePassState();
+
+        evaluateOverridePassConversions();
+        renderAll();
+      }
+    }
+
+    function deleteLogEntry(logId) {
+      if (confirm("Remove this entry from today's pass log?")) {
+        logs = logs.filter(l => l.id !== logId);
+        savePassState();
+        renderLogs();
+        renderStudentGrid();
+      }
+    }
+
+    function renderActiveDashboard() {
+      const container = document.getElementById('activeList');
+      const emptyState = document.getElementById('emptyActiveState');
+      const badge = document.getElementById('activeCountBadge');
+      const radarRing = document.getElementById('activeRadarRing');
+      const radarDot = document.getElementById('activeRadarDot');
+
+      Array.from(container.children).forEach(el => {
+        if (el.id !== 'emptyActiveState') el.remove();
+      });
+
+      const isFull = activePasses.length >= MAX_CONCURRENT_STUDENTS;
+      badge.textContent = `${activePasses.length} / ${MAX_CONCURRENT_STUDENTS} Out`;
+      badge.className = isFull 
+        ? 'bg-rose-100 text-rose-800 text-xs font-bold px-2.5 py-1 rounded-full' 
+        : 'bg-slate-100 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-full';
+
+      if (activePasses.length === 0) {
+        emptyState.classList.remove('hidden');
+        radarRing.classList.add('hidden');
+        radarDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-emerald-500';
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      radarRing.classList.remove('hidden');
+      radarDot.className = isFull 
+        ? 'relative inline-flex rounded-full h-3 w-3 bg-rose-500' 
+        : 'relative inline-flex rounded-full h-3 w-3 bg-amber-500';
+
+      const now = new Date();
+
+      activePasses.forEach(pass => {
+        const start = new Date(pass.startTime);
+        const elapsedSec = Math.max(0, Math.floor((now - start) / 1000));
+        const mins = Math.floor(elapsedSec / 60);
+        const secs = elapsedSec % 60;
+        const timeFormatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        let cardStyles = '';
+        let typeBadge = '';
+        let timerColor = '';
+
+        if (pass.isOverride) {
+          cardStyles = 'border-rose-700 bg-rose-600 text-white shadow-xl ring-4 ring-rose-300';
+          typeBadge = `<span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md bg-rose-950 text-rose-100">${pass.type} (Override)</span>`;
+          timerColor = 'text-white font-black';
+        } else if (pass.type === 'Bathroom') {
+          cardStyles = 'border-blue-700 bg-blue-600 text-white shadow-xl ring-4 ring-blue-300';
+          typeBadge = '<span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md bg-blue-950 text-blue-100">Bathroom</span>';
+          timerColor = 'text-white font-black';
+        } else if (pass.type === 'Guidance') {
+          cardStyles = 'border-purple-700 bg-purple-600 text-white shadow-xl ring-4 ring-purple-300';
+          typeBadge = '<span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md bg-purple-950 text-purple-100">Guidance</span>';
+          timerColor = 'text-white font-black';
+        } else if (pass.type === 'Errand') {
+          cardStyles = 'border-emerald-700 bg-emerald-600 text-white shadow-xl ring-4 ring-emerald-300';
+          typeBadge = '<span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-100">Errand</span>';
+          timerColor = 'text-white font-black';
+        } else if (pass.type === 'Library') {
+          cardStyles = 'border-amber-500 bg-amber-400 text-amber-950 shadow-xl ring-4 ring-amber-200';
+          typeBadge = '<span class="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md bg-amber-950 text-amber-100">Library</span>';
+          timerColor = 'text-amber-950 font-black';
+        }
+
+        let cardPulse = '';
+        if (mins >= 10) {
+          cardPulse = 'pulse-warning';
+        }
+
+        const card = document.createElement('div');
+        card.className = `rounded-2xl border-2 p-4 flex items-center justify-between gap-3 shadow-md transition-all ${cardStyles} ${cardPulse}`;
+        card.innerHTML = `
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-extrabold text-base leading-tight">${pass.student}</span>
+              ${typeBadge}
+              <span class="text-[10px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-black/20 text-white">${pass.block}</span>
+            </div>
+            <span class="text-xs opacity-90 mt-1">Left at ${formatTime(pass.startTime)}</span>
+            <div class="mt-2 text-2xl font-mono tracking-tight font-black ${timerColor}">
+              ${timeFormatted}
+            </div>
+          </div>
+          <button class="return-btn px-4 py-3 rounded-xl bg-white text-slate-900 hover:bg-slate-100 active:scale-95 font-extrabold text-sm shadow-md flex items-center gap-1.5 transition">
+            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>Return</span>
+          </button>
+        `;
+
+        card.querySelector('.return-btn').onclick = (e) => {
+          e.stopPropagation();
+          checkInStudent(pass.student);
+        };
+
+        container.appendChild(card);
+      });
+    }
+
+    function renderLogs() {
+      const tbody = document.getElementById('logTableBody');
+      const emptyPrompt = document.getElementById('emptyLogPrompt');
+      const summaryCount = document.getElementById('logSummaryCount');
+      tbody.innerHTML = '';
+
+      summaryCount.textContent = `${logs.length} recorded passes`;
+
+      if (logs.length === 0) {
+        emptyPrompt.classList.remove('hidden');
+        return;
+      }
+      emptyPrompt.classList.add('hidden');
+
+      logs.forEach(log => {
+        const type = log.type || 'Bathroom';
+        let badgeColor = 'bg-blue-600 text-white font-bold';
+        if (log.isOverride) badgeColor = 'bg-rose-600 text-white font-bold';
+        else if (type === 'Guidance') badgeColor = 'bg-purple-600 text-white font-bold';
+        else if (type === 'Errand') badgeColor = 'bg-emerald-600 text-white font-bold';
+        else if (type === 'Library') badgeColor = 'bg-amber-400 text-amber-950 font-bold';
+
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-slate-50 transition border-b border-slate-100 last:border-0';
+        row.innerHTML = `
+          <td class="py-3 px-3 font-semibold text-slate-900">${log.student}</td>
+          <td class="py-3 px-3"><span class="text-xs px-2.5 py-0.5 rounded-full ${badgeColor}">${type}${log.isOverride ? ' (Override)' : ''}</span></td>
+          <td class="py-3 px-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">${log.block}</span></td>
+          <td class="py-3 px-3 text-slate-600 font-mono text-xs">${formatTime(log.startTime)}</td>
+          <td class="py-3 px-3 text-slate-600 font-mono text-xs">${formatTime(log.endTime)}</td>
+          <td class="py-3 px-3 font-semibold text-slate-800">${log.durationMinutes} min</td>
+          <td class="py-3 px-3 text-right">
+            <button onclick="deleteLogEntry('${log.id}')" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete Entry">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function generateCsvString() {
+      const headers = ['Student Name', 'Pass Type', 'Override', 'Block / Class', 'Date', 'Time Departed', 'Time Returned', 'Duration (Minutes)'];
+      const rows = logs.map(l => [
+        `"${l.student}"`,
+        `"${l.type || 'Bathroom'}"`,
+        `"${l.isOverride ? 'Yes' : 'No'}"`,
+        `"${l.block}"`,
+        `"${getTodayString()}"`,
+        `"${formatTime(l.startTime)}"`,
+        `"${formatTime(l.endTime)}"`,
+        l.durationMinutes
+      ]);
+
+      return [headers.join(','), ...rows.map(e => e.join(','))].join('\r\n');
+    }
+
+    function exportToCSV() {
+      if (logs.length === 0) {
+        showActionModal({
+          title: 'Export CSV',
+          desc: 'No log entries to export for today.',
+          btnText: 'OK',
+          btnColor: 'bg-slate-700',
+          isAlertOnly: true
+        });
+        return;
+      }
+
+      const csvContent = generateCsvString();
+      const fileName = `Pass_Log_${getTodayString()}.csv`;
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    function openCsvViewer() {
+      if (logs.length === 0) {
+        showActionModal({
+          title: 'Pass Log',
+          desc: 'No log entries recorded yet today to view or copy.',
+          btnText: 'OK',
+          btnColor: 'bg-slate-700',
+          isAlertOnly: true
+        });
+        return;
+      }
+      const csvContent = generateCsvString();
+      document.getElementById('rawCsvTextArea').value = csvContent;
+      document.getElementById('csvViewerModal').classList.remove('hidden');
+    }
+
+    function copyCsvClipboard() {
+      const textarea = document.getElementById('rawCsvTextArea');
+      textarea.select();
+      textarea.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(textarea.value).then(() => {
+        const btn = document.getElementById('copyCsvClipboardBtn');
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.className = 'px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold transition shadow-sm';
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.className = 'px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm';
+        }, 1500);
+      });
+    }
+
+    /* DIRECT MODAL LAUNCHERS FROM TEACHER CONTROL CENTER */
+    function openResetModalDirect() {
+      openResetModal();
+    }
+
+    function openLogModalDirect() {
+      renderLogs();
+      document.getElementById('logModal').classList.remove('hidden');
+    }
+
+    function openSchedulePreviewModal() {
+      const container = document.getElementById('schedulePreviewContainer');
+      container.innerHTML = '';
+
+      blockList.forEach(bName => {
+        const sched = bellSchedule[bName] || { start: '--:--', end: '--:--' };
+        const div = document.createElement('div');
+        div.className = 'p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between';
+        
+        let lunchText = '';
+        if (sched.lunchStart && sched.lunchEnd) {
+          lunchText = `<span class="text-amber-700 font-semibold">(Lunch: ${sched.lunchStart} - ${sched.lunchEnd})</span>`;
+        }
+
+        div.innerHTML = `
+          <span class="font-bold text-slate-800">${bName}</span>
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-slate-600">${sched.start} – ${sched.end}</span>
+            ${lunchText}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      document.getElementById('schedulePreviewModal').classList.remove('hidden');
+    }
+
+    function closeSchedulePreviewModal() {
+      document.getElementById('schedulePreviewModal').classList.add('hidden');
+    }
+
+    function openResetModal() {
+      const select = document.getElementById('individualStudentSelect');
+      select.innerHTML = '';
+      const list = rosters[currentBlock] || [];
+
+      list.forEach(name => {
+        const stats = getPassStats(name);
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = `${name} (${stats.remaining}/1 left)`;
+        select.appendChild(opt);
+      });
+
+      document.getElementById('resetPassesModal').classList.remove('hidden');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetPassesModal').classList.add('hidden');
+    }
+
+    function resetIndividualStudent() {
+      const select = document.getElementById('individualStudentSelect');
+      const targetStudent = select.value;
+      if (!targetStudent) return;
+
+      logs = logs.filter(log => !(log.student === targetStudent && log.type === 'Bathroom' && !log.isOverride));
+      savePassState();
+      renderAll();
+      openResetModal();
+    }
+
+    function resetPassesForCurrentBlock() {
+      const currentRoster = rosters[currentBlock] || [];
+      logs = logs.filter(log => !(currentRoster.includes(log.student) && log.type === 'Bathroom' && !log.isOverride));
+      savePassState();
+      renderAll();
+      closeResetModal();
+    }
+
+    function resetPassesForAllBlocks() {
+      logs = logs.filter(log => !(log.type === 'Bathroom' && !log.isOverride));
+      savePassState();
+      renderAll();
+      closeResetModal();
+    }
+
+    /* Keypad Authentication */
+    function handleAuthAction() {
+      if (isTeacherUnlocked) {
+        lockTeacherMode();
+      } else {
+        openKeypad();
+      }
+    }
+
+    function openKeypad() {
+      enteredPin = '';
+      renderPinDots();
+      document.getElementById('keypad-modal').classList.remove('hidden');
+    }
+
+    function closeKeypad() {
+      document.getElementById('keypad-modal').classList.add('hidden');
+      enteredPin = '';
+    }
+
+    function renderPinDots() {
+      const container = document.getElementById('pin-dots-container');
+      const targetLen = teacherPasscode.length || 4;
+      let html = '';
+      for (let i = 0; i < targetLen; i++) {
+        if (i < enteredPin.length) {
+          html += '<div class="w-3.5 h-3.5 rounded-full bg-slate-900 border-2 border-slate-900 transition-all"></div>';
+        } else {
+          html += '<div class="w-3.5 h-3.5 rounded-full border-2 border-slate-300 transition-all"></div>';
+        }
+      }
+      container.innerHTML = html;
+    }
+
+    function pressKey(num) {
+      const maxLen = teacherPasscode.length;
+      if (enteredPin.length < maxLen) {
+        enteredPin += num;
+        renderPinDots();
+        if (enteredPin.length === maxLen) {
+          setTimeout(verifyPin, 140);
+        }
+      }
+    }
+
+    function pressClear() {
+      enteredPin = '';
+      renderPinDots();
+    }
+
+    function verifyPin() {
+      if (enteredPin === teacherPasscode) {
+        unlockTeacherMode();
+        closeKeypad();
+      } else {
+        const box = document.getElementById('keypad-box');
+        box.classList.add('shake');
+        setTimeout(() => {
+          box.classList.remove('shake');
+          pressClear();
+        }, 380);
+      }
+    }
+
+    function unlockTeacherMode() {
+      isTeacherUnlocked = true;
+      document.getElementById('teacher-panel').classList.remove('hidden');
+      
+      const lockBadge = document.getElementById('lock-badge');
+      lockBadge.className = 'hidden sm:inline-flex text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 items-center gap-1';
+      lockBadge.innerHTML = '<span>&#128273;</span> Teacher Controls Unlocked';
+      
+      document.getElementById('auth-icon').innerHTML = '&#128271;';
+      document.getElementById('auth-label').textContent = 'Lock Controls';
+    }
+
+    function lockTeacherMode() {
+      isTeacherUnlocked = false;
+      document.getElementById('teacher-panel').classList.add('hidden');
+
+      const lockBadge = document.getElementById('lock-badge');
+      lockBadge.className = 'hidden sm:inline-flex text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 items-center gap-1';
+      lockBadge.innerHTML = '<span>&#128274;</span> Student View';
+
+      document.getElementById('auth-icon').innerHTML = '&#128274;';
+      document.getElementById('auth-label').textContent = 'Teacher Controls';
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('keypad-modal');
+      if (!modal.classList.contains('hidden')) {
+        if (e.key >= '0' && e.key <= '9') {
+          pressKey(e.key);
+        } else if (e.key === 'Backspace') {
+          pressClear();
+        } else if (e.key === 'Escape') {
+          closeKeypad();
+        }
+      }
+    });
+
+    let pendingModalAction = null;
+    function showActionModal({ title, desc, btnText, btnColor, iconBg, isAlertOnly = false, action = null }) {
+      const modal = document.getElementById('confirmModal');
+      const nameEl = document.getElementById('modalStudentName');
+      const descEl = document.getElementById('modalDescription');
+      const passGroup = document.getElementById('passTypeSelectionGroup');
+      const actionBtn = document.getElementById('modalActionBtn');
+      const cancelBtn = document.getElementById('modalCancelBtn');
+      const iconContainer = document.getElementById('modalIconContainer');
+
+      nameEl.textContent = title;
+      descEl.textContent = desc;
+      passGroup.classList.add('hidden');
+      actionBtn.classList.remove('hidden');
+      actionBtn.textContent = btnText || 'Confirm';
+
+      actionBtn.className = `w-full py-3 px-4 rounded-xl text-white font-semibold text-sm transition active:scale-98 ${btnColor || 'bg-indigo-600'}`;
+      iconContainer.className = `w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3 ${iconBg || 'bg-indigo-50 text-indigo-600'}`;
+
+      if (isAlertOnly) {
+        cancelBtn.classList.add('hidden');
+      } else {
+        cancelBtn.classList.remove('hidden');
+      }
+
+      pendingModalAction = action;
+      modal.classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.add('hidden');
+      studentPendingSignOut = null;
+      pendingModalAction = null;
+    }
+
+    function renderAll() {
+      renderBlockTabs();
+      renderStudentGrid();
+      renderActiveDashboard();
+      renderLogs();
+      updateLiveClock();
+    }
+
+    // Modal Events
+    document.getElementById('modalCancelBtn').onclick = closeConfirmModal;
+    document.getElementById('modalActionBtn').onclick = () => {
+      if (pendingModalAction) pendingModalAction();
+      closeConfirmModal();
+    };
+
+    // Override Modal Events
+    document.getElementById('overrideCancelBtn').onclick = () => {
+      document.getElementById('overrideModal').classList.add('hidden');
+      overridePendingStudent = null;
+    };
+    document.getElementById('overrideSubmitBtn').onclick = submitOverride;
+    document.getElementById('overridePasscodeInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitOverride();
+    });
+
+    // Reset Passes Modal Events
+    document.getElementById('cancelResetBtn').onclick = closeResetModal;
+    document.getElementById('resetIndividualBtn').onclick = resetIndividualStudent;
+    document.getElementById('resetCurrentBlockBtn').onclick = resetPassesForCurrentBlock;
+    document.getElementById('resetAllBlocksBtn').onclick = resetPassesForAllBlocks;
+
+    // Log Modal Events
+    document.getElementById('closeLogBtn').onclick = () => {
+      document.getElementById('logModal').classList.add('hidden');
+    };
+    document.getElementById('exportCsvBtn').onclick = exportToCSV;
+    document.getElementById('viewCsvRawBtn').onclick = openCsvViewer;
+    document.getElementById('closeCsvViewerBtn').onclick = () => {
+      document.getElementById('csvViewerModal').classList.add('hidden');
+    };
+    document.getElementById('copyCsvClipboardBtn').onclick = copyCsvClipboard;
+
+    document.getElementById('clearTodayBtn').onclick = () => {
+      showActionModal({
+        title: "Clear Today's Log?",
+        desc: "This will remove all logged passes for today. Active passes will remain out.",
+        btnText: "Clear All Logs",
+        btnColor: "bg-rose-600 hover:bg-rose-700",
+        iconBg: "bg-rose-50 text-rose-600",
+        action: () => {
+          logs = [];
+          savePassState();
+          renderLogs();
+          renderStudentGrid();
+        }
+      });
+    };
+
+    // Search filter
+    document.getElementById('studentSearch').addEventListener('input', (e) => {
+      filterQuery = e.target.value;
+      renderStudentGrid();
+    });
+
+    // 1-Second Master Tick
+    setInterval(() => {
+      updateLiveClock();
+      evaluateOverridePassConversions();
+      if (activePasses.length > 0) {
+        renderActiveDashboard();
+      }
+    }, 1000);
+
+    // Cross-tab real-time listener: Ingest updates from Landing Page immediately
+    window.addEventListener('storage', (event) => {
+      if (
+        event.key === STORAGE_KEY_ROSTERS ||
+        event.key === STORAGE_KEY_SCHEDULE ||
+        event.key === STORAGE_KEY_PASSCODE ||
+        event.key === STORAGE_KEY_GROUP_PIN
+      ) {
+        loadLandingPageConfiguration();
+        renderAll();
+      }
+    });
+
+    // Initial Load
+    window.addEventListener('DOMContentLoaded', () => {
+      initData();
+      renderAll();
+    });
+  </script>
+</body>
+</html>

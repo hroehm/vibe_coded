@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Classroom Hub & Command Center</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            maroon: {
+              700: '#701c2e',
+              800: '#5c1625',
+              900: '#480f1c'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: text;
+    }
+    .btn-maroon {
+      background-color: #701c2e;
+      color: #ffffff;
+    }
+    .btn-maroon:hover {
+      background-color: #5c1625;
+    }
+    .keypad-btn {
+      height: 52px;
+      border-radius: 12px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.1s, transform 0.08s;
+    }
+    .keypad-btn:active {
+      background-color: #e2e8f0;
+      transform: scale(0.96);
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake {
+      animation: shake 0.35s ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased selection:bg-rose-100">
+
+  <!-- Top Hub Navigation Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm px-4 lg:px-8 py-3.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-maroon-700 flex items-center justify-center text-white shadow-md shrink-0 font-black text-xl">
+          &#127891;
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-black tracking-tight text-slate-900 leading-tight">Classroom Command Hub</h1>
+            <span id="lock-badge" class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+              <span>&#128274;</span> Student View
+            </span>
+          </div>
+          <p id="liveDateDisplay" class="text-xs font-semibold text-slate-500">Collierville High School</p>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="flex items-center gap-2">
+        <button onclick="downloadMasterTemplate()" class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 font-bold text-xs sm:text-sm text-slate-700 shadow-sm active:scale-95 flex items-center gap-1.5 transition">
+          <svg class="w-4 h-4 text-maroon-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span>Download CSV Template</span>
+        </button>
+
+        <button id="auth-btn" onclick="handleAuthAction()" class="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-sm transition btn-maroon flex items-center gap-1.5 active:scale-95">
+          <span id="auth-icon">&#128274;</span>
+          <span id="auth-label">Teacher Options</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- TEACHER CONTROL CENTER PANEL -->
+  <section id="teacher-panel" class="hidden bg-white border-b border-slate-200 px-4 lg:px-8 py-5 transition-all shadow-inner">
+    <div class="max-w-7xl mx-auto space-y-4">
+      
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <span>&#9881;</span> Master Teacher Control Center
+          </h2>
+          <p class="text-xs text-slate-500 font-semibold mt-0.5">
+            Configure global access codes, student rosters, and bell schedules. Changes sync instantly across all modules.
+          </p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button onclick="openChangePasswordModal()" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 shadow-sm active:scale-95">
+            <span>&#128273;</span> Passcode Settings
+          </button>
+          <button onclick="lockTeacherMode()" class="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 font-bold text-xs hover:bg-rose-100 flex items-center gap-1.5 shadow-sm active:scale-95">
+            <span>&#128274;</span> Lock Mode
+          </button>
+        </div>
+      </div>
+
+      <!-- Primary Setup Options Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        
+        <!-- CSV Setup Card -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <span>&#128196;</span> Roster CSV Setup
+              </span>
+              <span class="text-[10px] bg-slate-200 font-bold px-2 py-0.5 rounded text-slate-600">CSV Import</span>
+            </div>
+            <p class="text-xs text-slate-500">Import student names across all 5 blocks at once using standard template.</p>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="w-full py-2 px-3 rounded-xl bg-maroon-700 hover:bg-maroon-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition">
+              <span>&#128194;</span> Upload Populated CSV
+              <input type="file" id="master-csv-input" accept=".csv,text/csv" onchange="handleMasterCsvUpload(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Class Rosters Direct Editor -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <span>&#128101;</span> Edit Rosters
+              </span>
+              <span id="total-students-badge" class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">0 Students</span>
+            </div>
+            <p class="text-xs text-slate-500">Quickly edit or view student enrollment line-by-line for each period block.</p>
+          </div>
+          <button onclick="openRosterEditorModal()" class="w-full py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+            <span>&#9998;</span> Manage Class Rosters
+          </button>
+        </div>
+
+        <!-- Master Bell Schedule -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <span>&#128338;</span> Bell Schedule
+              </span>
+              <span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">5 Blocks</span>
+            </div>
+            <p class="text-xs text-slate-500">Configure period start/end times and lunch interruptions for hall passes.</p>
+          </div>
+          <button onclick="openScheduleModal()" class="w-full py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+            <span>&#9881;</span> Adjust Period Times
+          </button>
+        </div>
+
+        <!-- Security Passcode Card -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <span>&#128273;</span> Security Code
+              </span>
+              <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Protected</span>
+            </div>
+            <p class="text-xs text-slate-500">Unified code controlling teacher modes and pass overrides across apps.</p>
+          </div>
+          <button onclick="openChangePasswordModal()" class="w-full py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+            <span>&#128273;</span> Change Access Code
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- MAIN MODULE DASHBOARD (Interactive Launch Cards) -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    
+    <div>
+      <h2 class="text-2xl font-black text-slate-900 tracking-tight">Classroom Applications</h2>
+      <p class="text-sm font-semibold text-slate-500">Select a tool below. Data and teacher settings are synchronized across all modules.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Pass Tracker Card -->
+      <a href="pass_tracker.html" class="group bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-400 transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-14 h-14 rounded-2xl bg-indigo-50 group-hover:bg-indigo-600 flex items-center justify-center text-indigo-600 group-hover:text-white transition-all text-2xl mb-5 shadow-sm">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="flex items-center justify-between mb-1.5">
+            <h3 class="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition">Hall Pass Tracker</h3>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">Live Status</span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium leading-relaxed">
+            Monitor student bathroom visits, guidance runs, and errand passes with live countdowns and restriction windows.
+          </p>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
+          <span>Open Pass Manager &rarr;</span>
+          <span class="text-slate-400 font-mono text-[11px]" id="hub-pass-status">Checking...</span>
+        </div>
+      </a>
+
+      <!-- Countdown Timer Card -->
+      <a href="countdown_timer.html" class="group bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:border-blue-400 transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 group-hover:bg-blue-600 flex items-center justify-center text-blue-600 group-hover:text-white transition-all text-2xl mb-5 shadow-sm">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="flex items-center justify-between mb-1.5">
+            <h3 class="text-lg font-black text-slate-900 group-hover:text-blue-600 transition">Countdown Timer</h3>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">Full-Screen</span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium leading-relaxed">
+            Distraction-free high-visibility countdown clock with presets, custom alert chimes, wake-lock, and overtime alerts.
+          </p>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
+          <span>Launch Clock &rarr;</span>
+          <span class="text-slate-400 font-mono text-[11px]">Audio Alert Synced</span>
+        </div>
+      </a>
+
+      <!-- Group Maker Card -->
+      <a href="group_maker.html" class="group bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:border-rose-400 transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-14 h-14 rounded-2xl bg-rose-50 group-hover:bg-maroon-700 flex items-center justify-center text-maroon-700 group-hover:text-white transition-all text-2xl mb-5 shadow-sm">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div class="flex items-center justify-between mb-1.5">
+            <h3 class="text-lg font-black text-slate-900 group-hover:text-maroon-700 transition">Group Maker</h3>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-maroon-700 border border-rose-100">Smart Algorithm</span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium leading-relaxed">
+            Automatic team builder with "Do Not Pair" separation rules, role assignments, custom color banners, and drag-and-drop.
+          </p>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-maroon-700">
+          <span>Organize Teams &rarr;</span>
+          <span class="text-slate-400 font-mono text-[11px]" id="hub-roster-status">Loaded</span>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Active Class Overview Banner -->
+    <div class="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div>
+        <h4 class="text-base font-extrabold text-slate-900">Synchronized Classroom Data Status</h4>
+        <p class="text-xs text-slate-500 font-medium mt-0.5">
+          Your rosters, schedule, and security PIN are cached locally on this device and persist across reloads.
+        </p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="pin-indicator" class="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center gap-1.5">
+          <span>&#128274;</span> Access Code: Active &amp; Protected
+        </span>
+        <button onclick="downloadMasterTemplate()" class="text-xs font-bold px-3.5 py-1.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 active:scale-95">
+          CSV Template (.csv)
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- KEYPAD MODAL (Authentication) -->
+  <div id="keypad-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 w-[340px] max-w-[92vw] shadow-2xl border border-slate-100 text-slate-900" id="keypad-box">
+      <div class="text-center mb-3">
+        <div class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center bg-rose-50 text-maroon-700 text-xl mb-2 font-bold shadow-sm">
+          &#128274;
+        </div>
+        <h3 class="text-lg font-black text-slate-800">Teacher Passcode</h3>
+        <p class="text-xs text-slate-500 font-semibold">Enter passcode to unlock Master Controls</p>
+      </div>
+
+      <div class="flex justify-center gap-3 my-4" id="pin-dots-container"></div>
+
+      <div class="grid grid-cols-3 gap-2 mt-2">
+        <button onclick="pressKey('1')" class="keypad-btn">1</button>
+        <button onclick="pressKey('2')" class="keypad-btn">2</button>
+        <button onclick="pressKey('3')" class="keypad-btn">3</button>
+        <button onclick="pressKey('4')" class="keypad-btn">4</button>
+        <button onclick="pressKey('5')" class="keypad-btn">5</button>
+        <button onclick="pressKey('6')" class="keypad-btn">6</button>
+        <button onclick="pressKey('7')" class="keypad-btn">7</button>
+        <button onclick="pressKey('8')" class="keypad-btn">8</button>
+        <button onclick="pressKey('9')" class="keypad-btn">9</button>
+        <button onclick="closeKeypad()" class="keypad-btn text-xs font-black uppercase text-slate-500">Cancel</button>
+        <button onclick="pressKey('0')" class="keypad-btn">0</button>
+        <button onclick="pressClear()" class="keypad-btn text-xs font-black uppercase text-rose-500">&#9003;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSCODE MANAGEMENT MODAL -->
+  <div id="password-mgmt-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 w-[400px] max-w-[92vw] shadow-2xl border border-slate-100 text-slate-900">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div>
+          <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
+            <span>&#128273;</span> Passcode Settings
+          </h3>
+          <p class="text-xs text-slate-500 font-semibold">Update passcode for Pass Tracker &amp; Groups</p>
+        </div>
+        <button onclick="closeChangePasswordModal()" class="text-slate-400 font-black text-xl hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="space-y-3.5 mb-5">
+        <div>
+          <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1">Current Passcode</label>
+          <input type="password" id="pw-current-input" maxlength="12" placeholder="••••" class="w-full p-2.5 text-center text-lg tracking-widest font-black rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-maroon-700" inputmode="numeric" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1">New Passcode</label>
+          <input type="password" id="pw-new-input" maxlength="12" placeholder="••••" class="w-full p-2.5 text-center text-lg tracking-widest font-black rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-maroon-700" inputmode="numeric" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1">Confirm New Passcode</label>
+          <input type="password" id="pw-confirm-input" maxlength="12" placeholder="••••" class="w-full p-2.5 text-center text-lg tracking-widest font-black rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-maroon-700" inputmode="numeric" />
+        </div>
+
+        <button onclick="saveNewPassword()" class="w-full py-2.5 rounded-xl btn-maroon font-bold text-xs shadow-md transition active:scale-95">
+          Update Unified Passcode
+        </button>
+      </div>
+
+      <div class="border-t border-slate-100 pt-4">
+        <button onclick="resetPasswordToDefault()" class="w-full py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95">
+          <span>&#8635;</span> Reset to Default Passcode
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROSTER DIRECT EDITOR MODAL -->
+  <div id="rosterEditorModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Manage Class Rosters</h3>
+          <p class="text-xs text-slate-500 font-semibold">Select block to edit student lists (one name per line)</p>
+        </div>
+        <button onclick="closeRosterEditorModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4 overflow-y-auto pr-1 flex-1">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Select Class Block</label>
+          <select id="hubRosterBlockSelect" onchange="loadBlockRosterIntoTextarea()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-maroon-700">
+            <option value="Block 1">Block 1</option>
+            <option value="Block 2">Block 2</option>
+            <option value="Block 3">Block 3</option>
+            <option value="Block 4">Block 4</option>
+            <option value="Block 5">Block 5</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Student Names (One per line)</label>
+          <textarea id="hubRosterTextarea" rows="9" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-maroon-700 focus:outline-none"></textarea>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-100 flex justify-end gap-2 mt-3">
+        <button onclick="closeRosterEditorModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+        <button onclick="saveCurrentBlockRoster()" class="px-5 py-2.5 rounded-xl btn-maroon text-white text-xs font-bold tracking-wide uppercase transition shadow-md">
+          Save Roster
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BELL SCHEDULE MODAL -->
+  <div id="scheduleModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Master Bell Schedule</h3>
+          <p class="text-xs text-slate-500 font-semibold">Configures 15-minute restrictions across Pass Tracker</p>
+        </div>
+        <button onclick="closeScheduleModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-3 overflow-y-auto pr-1 flex-1 text-sm" id="hubScheduleInputsContainer"></div>
+
+      <div class="pt-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2 mt-3">
+        <button onclick="restoreStandardTimes()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+          Restore Standard Times
+        </button>
+        <button onclick="saveMasterSchedule()" class="px-5 py-2 rounded-xl btn-maroon text-white text-xs font-bold tracking-wide uppercase transition shadow-md">
+          Apply &amp; Save Schedule
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Default Configurations */
+    const DEFAULT_PASSCODE = "0000";
+
+    const DEFAULT_BELL_SCHEDULE = {
+      'Block 1': { start: '07:30', end: '08:55' },
+      'Block 2': { start: '09:01', end: '10:26' },
+      'Block 3': { start: '10:32', end: '11:02' },
+      'Block 4': { start: '11:08', end: '13:00', lunchStart: '12:06', lunchEnd: '12:31' },
+      'Block 5': { start: '13:05', end: '14:30' }
+    };
+
+    const DEFAULT_ROSTERS = {
+      'Block 1': ['Wesam Ballouk', 'Eric Chen', 'Kieran Flippo', 'Alec Gruber', 'Jameson Hoch', 'Jaydan Jackson', 'William Jones', 'Mohammed Labai', 'Matheus Leitzke', 'Ashish Mangesh', 'Calen McDamiel', 'Thomas Parker', 'Linnon Tyson'],
+      'Block 2': ['Darsh Arvind', 'Anvarsho Azizmamadov', 'Ryan Call', 'Prahasith Chandu', 'Colton Delashmit', 'Ganesh Divakaran', 'Noah Gullet', 'Khyati Gupta', 'Naman Jain', 'Tejasri Magesh', 'Jasmita Nandigam', 'Keya Patel', 'Bhoomika Sammeta', 'Ashrit Somishetty', 'Kiersten Terrell', 'Landon Watson'],
+      'Block 3': ['Riley Brewer', 'Abigail Call', 'Brent Coleman', 'Peyton Conlon', 'Jayda Gallagher', 'Rohith Giledi', 'Jamari Malone', 'Muhammad Mansour', 'Joelle Miller', 'Adriana Nelson', 'Justin Perez', 'Duc Phan', 'Rami Rassul', 'Mycah Roberts', 'Keath Smith', 'Garrett Stephens', 'Alecia Whaley', 'Lucy Won', 'Brian Wright'],
+      'Block 4': ['Hamza Abdulhalim', 'Saleh Ahsan', 'Anisha Athian', 'Emery Benson', 'Chathurya Bolla', 'Minahil Faisal', 'Adriana Garcia', 'Michael Hafez', 'Sahithi Indukuri', 'Aliyan Khetani', 'Victor Kornitz', 'Owen Lyles', 'Elise MacDonald', 'Sharmitha Pradheep', 'Prem Mundra', 'Betul Murat', 'Samyami Paidi', 'Estella Poe', 'Lexie Rorie', 'Cruz Rosa', 'Neya Sam', 'Kanav Santhosh', 'Aliza Syed', 'Saija Vankadara', 'Kanak Verma', 'Preston Vu'],
+      'Block 5': ['Teacher Planning']
+    };
+
+    /* State Variables */
+    let isTeacherUnlocked = false;
+    let enteredPin = '';
+    let masterPasscode = DEFAULT_PASSCODE;
+    let masterRosters = {};
+    let masterSchedule = {};
+
+    /* Synchronized Keys across the applications */
+    const KEY_GROUP_PIN = 'cls_group_maker_pin';
+    const KEY_PASS_PIN = 'pass_tracker_pin_v9';
+    const KEY_PASS_ROSTERS = 'pass_tracker_rosters_v9';
+    const KEY_GROUP_DATA = 'cls_group_maker_data';
+    const KEY_PASS_SCHEDULE = 'pass_tracker_schedule_v9';
+
+    function initHub() {
+      // 1. Synchronize Security Passcode
+      const savedPassPin = localStorage.getItem(KEY_PASS_PIN);
+      const savedGroupPin = localStorage.getItem(KEY_GROUP_PIN);
+      masterPasscode = savedPassPin || savedGroupPin || DEFAULT_PASSCODE;
+      syncPasscodeToLocalStorage(masterPasscode);
+
+      // 2. Synchronize Rosters
+      const savedPassRosters = localStorage.getItem(KEY_PASS_ROSTERS);
+      const savedGroupData = localStorage.getItem(KEY_GROUP_DATA);
+
+      if (savedPassRosters) {
+        try {
+          masterRosters = JSON.parse(savedPassRosters);
+        } catch (e) {
+          masterRosters = JSON.parse(JSON.stringify(DEFAULT_ROSTERS));
+        }
+      } else if (savedGroupData) {
+        try {
+          const parsed = JSON.parse(savedGroupData);
+          masterRosters = {};
+          for (let b = 1; b <= 5; b++) {
+            masterRosters[`Block ${b}`] = (parsed.blocks && parsed.blocks[b] && parsed.blocks[b].roster)
+              ? parsed.blocks[b].roster.map(r => r.name)
+              : [];
+          }
+        } catch (e) {
+          masterRosters = JSON.parse(JSON.stringify(DEFAULT_ROSTERS));
+        }
+      } else {
+        masterRosters = JSON.parse(JSON.stringify(DEFAULT_ROSTERS));
+      }
+      syncRostersToAllModules(masterRosters);
+
+      // 3. Synchronize Bell Schedule
+      const savedSchedule = localStorage.getItem(KEY_PASS_SCHEDULE);
+      if (savedSchedule) {
+        try {
+          masterSchedule = JSON.parse(savedSchedule);
+        } catch (e) {
+          masterSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
+        }
+      } else {
+        masterSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
+      }
+      localStorage.setItem(KEY_PASS_SCHEDULE, JSON.stringify(masterSchedule));
+
+      updateHubUI();
+    }
+
+    function updateHubUI() {
+      // Date Display
+      const dateOpts = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+      document.getElementById('liveDateDisplay').textContent = `${new Date().toLocaleDateString(undefined, dateOpts)} | Collierville High School`;
+
+      // Student Count
+      let totalStudents = 0;
+      Object.keys(masterRosters).forEach(b => {
+        totalStudents += (masterRosters[b] || []).length;
+      });
+      document.getElementById('total-students-badge').textContent = `${totalStudents} Students`;
+      document.getElementById('hub-roster-status').textContent = `${totalStudents} Students`;
+
+      // Masked Access Code Status (no raw numbers revealed)
+      document.getElementById('pin-indicator').innerHTML = `<span>&#128274;</span> Access Code: Active &amp; Protected`;
+
+      // Check Active Passes
+      try {
+        const activePasses = JSON.parse(localStorage.getItem('pass_tracker_active_passes_v9')) || [];
+        document.getElementById('hub-pass-status').textContent = `${activePasses.length} currently out`;
+      } catch (e) {
+        document.getElementById('hub-pass-status').textContent = `0 out`;
+      }
+    }
+
+    /* Synchronization Helpers */
+    function syncPasscodeToLocalStorage(newPin) {
+      masterPasscode = newPin;
+      localStorage.setItem(KEY_PASS_PIN, newPin);
+      localStorage.setItem(KEY_GROUP_PIN, newPin);
+    }
+
+    function syncRostersToAllModules(rosterMap) {
+      // Save for Pass Tracker
+      localStorage.setItem(KEY_PASS_ROSTERS, JSON.stringify(rosterMap));
+
+      // Save for Group Maker
+      let groupData = null;
+      try {
+        groupData = JSON.parse(localStorage.getItem(KEY_GROUP_DATA));
+      } catch (e) {}
+
+      if (!groupData || !groupData.blocks) {
+        groupData = {
+          activeBlock: 1,
+          blocks: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {} }
+        };
+      }
+
+      for (let b = 1; b <= 5; b++) {
+        const blockKey = `Block ${b}`;
+        const studentNames = rosterMap[blockKey] || [];
+        if (!groupData.blocks[b]) groupData.blocks[b] = {};
+
+        groupData.blocks[b].roster = studentNames.map((name, idx) => ({
+          id: `s_${b}_${idx}`,
+          name: name,
+          active: true
+        }));
+      }
+
+      localStorage.setItem(KEY_GROUP_DATA, JSON.stringify(groupData));
+    }
+
+    /* Download Roster Template CSV */
+    function downloadMasterTemplate() {
+      const csvContent =
+`Block,Student Name,Notes
+1,Student Name 1,Sample Note
+1,Student Name 2,Sample Note
+1,Student Name 3,Sample Note
+2,Student Name 4,Sample Note
+2,Student Name 5,Sample Note
+3,Student Name 6,Sample Note
+4,Student Name 7,Sample Note
+5,Student Name 8,Sample Note`;
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'roster_tempalte.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    /* CSV Upload & Parser */
+    function handleMasterCsvUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        parseAndApplyMasterCsv(e.target.result);
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function parseCsvRow(rowText) {
+      const result = [];
+      let current = '';
+      let insideQuotes = false;
+      for (let i = 0; i < rowText.length; i++) {
+        const char = rowText[i];
+        if (char === '"') {
+          insideQuotes = !insideQuotes;
+        } else if (char === ',' && !insideQuotes) {
+          result.push(current.trim().replace(/^"|"$/g, ''));
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim().replace(/^"|"$/g, ''));
+      return result;
+    }
+
+    function parseAndApplyMasterCsv(text) {
+      const rawLines = text.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0);
+      if (rawLines.length === 0) {
+        alert('Uploaded CSV file is empty.');
+        return;
+      }
+
+      let startIndex = 0;
+      let blockCol = 0;
+      let nameCol = 1;
+
+      const firstRow = parseCsvRow(rawLines[0]).map(col => col.toLowerCase());
+      const hasBlockHeader = firstRow.some(c => c.includes('block') || c.includes('period'));
+      const hasNameHeader = firstRow.some(c => c.includes('name') || c.includes('student'));
+
+      if (hasBlockHeader || hasNameHeader) {
+        startIndex = 1;
+        const bIdx = firstRow.findIndex(c => c.includes('block') || c.includes('period'));
+        const nIdx = firstRow.findIndex(c => c.includes('name') || c.includes('student'));
+        if (bIdx !== -1) blockCol = bIdx;
+        if (nIdx !== -1) nameCol = nIdx;
+      }
+
+      const newRosters = {
+        'Block 1': [],
+        'Block 2': [],
+        'Block 3': [],
+        'Block 4': [],
+        'Block 5': []
+      };
+
+      let importedCount = 0;
+
+      for (let i = startIndex; i < rawLines.length; i++) {
+        const cols = parseCsvRow(rawLines[i]);
+        if (cols.length === 0) continue;
+
+        let targetBlock = 'Block 1';
+        let studentName = '';
+
+        if (cols.length >= 2) {
+          const rawBlockStr = cols[blockCol] ? cols[blockCol].replace(/[^0-9]/g, '') : '';
+          const parsedBlockNum = parseInt(rawBlockStr, 10);
+          if (parsedBlockNum >= 1 && parsedBlockNum <= 5) {
+            targetBlock = `Block ${parsedBlockNum}`;
+          }
+          studentName = cols[nameCol] || cols[1] || '';
+        } else if (cols.length === 1) {
+          studentName = cols[0];
+        }
+
+        studentName = studentName.trim();
+        if (studentName.length > 0) {
+          if (!newRosters[targetBlock].includes(studentName)) {
+            newRosters[targetBlock].push(studentName);
+            importedCount++;
+          }
+        }
+      }
+
+      masterRosters = newRosters;
+      syncRostersToAllModules(masterRosters);
+      updateHubUI();
+      alert(`Master Setup Successful: Imported ${importedCount} students across all 5 blocks!`);
+    }
+
+    /* Teacher Keypad Security */
+    function handleAuthAction() {
+      if (isTeacherUnlocked) {
+        lockTeacherMode();
+      } else {
+        openKeypad();
+      }
+    }
+
+    function openKeypad() {
+      enteredPin = '';
+      renderPinDots();
+      document.getElementById('keypad-modal').classList.remove('hidden');
+    }
+
+    function closeKeypad() {
+      document.getElementById('keypad-modal').classList.add('hidden');
+      enteredPin = '';
+    }
+
+    function renderPinDots() {
+      const container = document.getElementById('pin-dots-container');
+      const targetLen = masterPasscode.length || 4;
+      let html = '';
+      for (let i = 0; i < targetLen; i++) {
+        if (i < enteredPin.length) {
+          html += '<div class="w-3.5 h-3.5 rounded-full bg-slate-900 border-2 border-slate-900 transition-all"></div>';
+        } else {
+          html += '<div class="w-3.5 h-3.5 rounded-full border-2 border-slate-300 transition-all"></div>';
+        }
+      }
+      container.innerHTML = html;
+    }
+
+    function pressKey(num) {
+      const maxLen = masterPasscode.length;
+      if (enteredPin.length < maxLen) {
+        enteredPin += num;
+        renderPinDots();
+        if (enteredPin.length === maxLen) {
+          setTimeout(verifyPin, 140);
+        }
+      }
+    }
+
+    function pressClear() {
+      enteredPin = '';
+      renderPinDots();
+    }
+
+    function verifyPin() {
+      if (enteredPin === masterPasscode) {
+        unlockTeacherMode();
+        closeKeypad();
+      } else {
+        const box = document.getElementById('keypad-box');
+        box.classList.add('shake');
+        setTimeout(() => {
+          box.classList.remove('shake');
+          pressClear();
+        }, 380);
+      }
+    }
+
+    function unlockTeacherMode() {
+      isTeacherUnlocked = true;
+      document.getElementById('teacher-panel').classList.remove('hidden');
+      const badge = document.getElementById('lock-badge');
+      badge.className = 'text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1';
+      badge.innerHTML = '<span>&#128273;</span> Teacher Mode Unlocked';
+      document.getElementById('auth-icon').innerHTML = '&#128271;';
+      document.getElementById('auth-label').textContent = 'Lock Options';
+    }
+
+    function lockTeacherMode() {
+      isTeacherUnlocked = false;
+      document.getElementById('teacher-panel').classList.add('hidden');
+      const badge = document.getElementById('lock-badge');
+      badge.className = 'text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1';
+      badge.innerHTML = '<span>&#128274;</span> Student View';
+      document.getElementById('auth-icon').innerHTML = '&#128274;';
+      document.getElementById('auth-label').textContent = 'Teacher Options';
+    }
+
+    /* Change Passcode */
+    function openChangePasswordModal() {
+      document.getElementById('pw-current-input').value = '';
+      document.getElementById('pw-new-input').value = '';
+      document.getElementById('pw-confirm-input').value = '';
+      document.getElementById('password-mgmt-modal').classList.remove('hidden');
+    }
+
+    function closeChangePasswordModal() {
+      document.getElementById('password-mgmt-modal').classList.add('hidden');
+    }
+
+    function saveNewPassword() {
+      const current = document.getElementById('pw-current-input').value.trim();
+      const newPw = document.getElementById('pw-new-input').value.trim();
+      const confirmPw = document.getElementById('pw-confirm-input').value.trim();
+
+      if (current !== masterPasscode) {
+        alert('The current passcode entered is incorrect.');
+        return;
+      }
+      if (!newPw || newPw.length < 3) {
+        alert('Passcode must be at least 3 digits.');
+        return;
+      }
+      if (newPw !== confirmPw) {
+        alert('New passcode confirmation does not match.');
+        return;
+      }
+
+      syncPasscodeToLocalStorage(newPw);
+      closeChangePasswordModal();
+      updateHubUI();
+      alert('Master security passcode updated and synchronized across all pages!');
+    }
+
+    function resetPasswordToDefault() {
+      if (confirm('Reset the master passcode to system default?')) {
+        syncPasscodeToLocalStorage(DEFAULT_PASSCODE);
+        closeChangePasswordModal();
+        updateHubUI();
+        alert('Master passcode has been reset to default.');
+      }
+    }
+
+    /* Roster Editor Modal */
+    function openRosterEditorModal() {
+      loadBlockRosterIntoTextarea();
+      document.getElementById('rosterEditorModal').classList.remove('hidden');
+    }
+
+    function closeRosterEditorModal() {
+      document.getElementById('rosterEditorModal').classList.add('hidden');
+    }
+
+    function loadBlockRosterIntoTextarea() {
+      const block = document.getElementById('hubRosterBlockSelect').value;
+      const list = masterRosters[block] || [];
+      document.getElementById('hubRosterTextarea').value = list.join('\n');
+    }
+
+    function saveCurrentBlockRoster() {
+      const block = document.getElementById('hubRosterBlockSelect').value;
+      const text = document.getElementById('hubRosterTextarea').value;
+      const parsed = text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+      masterRosters[block] = parsed;
+      syncRostersToAllModules(masterRosters);
+      updateHubUI();
+      closeRosterEditorModal();
+      alert(`${block} roster updated!`);
+    }
+
+    /* Schedule Modal */
+    function openScheduleModal() {
+      const container = document.getElementById('hubScheduleInputsContainer');
+      container.innerHTML = '';
+
+      Object.keys(DEFAULT_BELL_SCHEDULE).forEach(blockName => {
+        const item = masterSchedule[blockName] || DEFAULT_BELL_SCHEDULE[blockName];
+        const row = document.createElement('div');
+        row.className = 'p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-2';
+
+        let lunchHtml = `
+          <div class="mt-2 pt-2 border-t border-slate-200/80 flex items-center justify-between gap-2 flex-wrap">
+            <span class="text-xs font-bold text-amber-800 flex items-center gap-1">
+              <span>&#127822;</span> Lunch Interruption (Optional):
+            </span>
+            <div class="flex items-center gap-2">
+              <div>
+                <label class="block text-[9px] uppercase font-bold text-slate-500 mb-0.5">Start</label>
+                <input type="time" data-block="${blockName}" data-type="lunchStart" value="${item.lunchStart || ''}" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono font-bold focus:ring-2 focus:ring-maroon-700">
+              </div>
+              <span class="text-slate-400 font-bold mt-3">&ndash;</span>
+              <div>
+                <label class="block text-[9px] uppercase font-bold text-slate-500 mb-0.5">End</label>
+                <input type="time" data-block="${blockName}" data-type="lunchEnd" value="${item.lunchEnd || ''}" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono font-bold focus:ring-2 focus:ring-maroon-700">
+              </div>
+            </div>
+          </div>
+        `;
+
+        row.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <span class="font-bold text-slate-800 text-sm truncate w-28 sm:w-36">${blockName}</span>
+            <div class="flex items-center gap-2">
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-500 mb-0.5">Start</label>
+                <input type="time" data-block="${blockName}" data-type="start" value="${item.start}" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono font-bold focus:ring-2 focus:ring-maroon-700">
+              </div>
+              <span class="text-slate-400 font-bold mt-3">&ndash;</span>
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-500 mb-0.5">End</label>
+                <input type="time" data-block="${blockName}" data-type="end" value="${item.end}" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono font-bold focus:ring-2 focus:ring-maroon-700">
+              </div>
+            </div>
+          </div>
+          ${lunchHtml}
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById('scheduleModal').classList.remove('hidden');
+    }
+
+    function closeScheduleModal() {
+      document.getElementById('scheduleModal').classList.add('hidden');
+    }
+
+    function saveMasterSchedule() {
+      const inputs = document.querySelectorAll('#hubScheduleInputsContainer input');
+      inputs.forEach(input => {
+        const block = input.getAttribute('data-block');
+        const type = input.getAttribute('data-type');
+        if (!masterSchedule[block]) masterSchedule[block] = {};
+        masterSchedule[block][type] = input.value;
+      });
+
+      localStorage.setItem(KEY_PASS_SCHEDULE, JSON.stringify(masterSchedule));
+      closeScheduleModal();
+      alert('Master bell schedule saved and synced to Pass Tracker!');
+    }
+
+    function restoreStandardTimes() {
+      if (confirm('Reset bell schedule to standard times?')) {
+        masterSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
+        openScheduleModal();
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('keypad-modal');
+      if (!modal.classList.contains('hidden')) {
+        if (e.key >= '0' && e.key <= '9') {
+          pressKey(e.key);
+        } else if (e.key === 'Backspace') {
+          pressClear();
+        } else if (e.key === 'Escape') {
+          closeKeypad();
+        }
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initHub();
+    });
+  </script>
+</body>
+</html>
